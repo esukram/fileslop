@@ -1,0 +1,32 @@
+{
+  "name": "fileslop-workspace",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.15.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc -p .",
+    "build": "pnpm --filter fileslop build",
+    "test": "pnpm test:unit && pnpm test:e2e",
+    "test:unit": "node --test 'server/test/**/*.test.ts' 'client/test/**/*.test.ts'",
+    "test:e2e": "node --test --test-concurrency=1 'e2e/**/*.test.ts'",
+    "check": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm test"
+  },
+  "prettier": {
+    "printWidth": 100,
+    "singleQuote": false
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^26.6.5",
+    "eslint": "^10.13.0",
+    "prettier": "^3.9.10",
+    "typescript": "6.0.3",
+    "typescript-eslint": "^8.72.0"
+  }
+}

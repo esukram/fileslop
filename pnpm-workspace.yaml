@@ -1,0 +1,6 @@
+packages:
+  - server
+  - client
+
+# Supply-chain hardening: do not install versions younger than 3 days.
+minimumReleaseAge: 4320
