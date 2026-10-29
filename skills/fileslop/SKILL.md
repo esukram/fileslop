@@ -17,7 +17,13 @@ npx -y fileslop upload <file>
 The command prints one line of JSON. Use the `url` value:
 
 ```json
-{"id":"…","url":"https://files.example.org/fileslop/<id>/plan.html","filename":"plan.html","contentType":"text/html; charset=utf-8","size":1234}
+{
+  "id": "…",
+  "url": "https://files.example.org/fileslop/<id>/plan.html",
+  "filename": "plan.html",
+  "contentType": "text/html; charset=utf-8",
+  "size": 1234
+}
 ```
 
 - Unknown file extension: add `--type <media-type>`, for example `--type text/plain`.

@@ -194,7 +194,10 @@ async function upload(argv: string[]): Promise<void> {
     if (!stat.isFile()) throw new Error("not a file");
     size = stat.size;
   } catch {
-    throw new UsageError(`cannot read the file ${path}`, "Check the path. Upload one regular file.");
+    throw new UsageError(
+      `cannot read the file ${path}`,
+      "Check the path. Upload one regular file.",
+    );
   }
   if (size === 0) throw new UsageError(`the file ${path} is empty`, "Upload a file with content.");
 
@@ -229,7 +232,8 @@ async function upload(argv: string[]): Promise<void> {
   try {
     res = await fetch(url, { method: "POST", headers, body: readFileSync(path) });
   } catch (err) {
-    const cause = err instanceof Error && err.cause instanceof Error ? err.cause.message : String(err);
+    const cause =
+      err instanceof Error && err.cause instanceof Error ? err.cause.message : String(err);
     throw new UploadError(
       `cannot reach ${url}: ${cause}`,
       "Check FILESLOP_URL and your network connection.",

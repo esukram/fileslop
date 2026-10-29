@@ -64,9 +64,7 @@ export function sign(input: SignInput, creds: Credentials): Record<string, strin
     input.payloadHash,
   ].join("\n");
 
-  const stringToSign = ["AWS4-HMAC-SHA256", amzDate, scope, sha256Hex(canonicalRequest)].join(
-    "\n",
-  );
+  const stringToSign = ["AWS4-HMAC-SHA256", amzDate, scope, sha256Hex(canonicalRequest)].join("\n");
   const kDate = hmac(`AWS4${creds.secretAccessKey}`, day);
   const kSigning = hmac(hmac(hmac(kDate, input.region), "s3"), "aws4_request");
   const signature = createHmac("sha256", kSigning).update(stringToSign).digest("hex");

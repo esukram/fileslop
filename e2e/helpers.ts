@@ -59,7 +59,11 @@ export const SERVER = join(ROOT, "server/src/main.ts");
 export const CLIENT = join(ROOT, "client/src/cli.ts");
 
 export async function issueKey(dataDir: string, username: string): Promise<string> {
-  const result = await run([SERVER, "issue-key", username], { FILESLOP_DATA_DIR: dataDir }, dataDir);
+  const result = await run(
+    [SERVER, "issue-key", username],
+    { FILESLOP_DATA_DIR: dataDir },
+    dataDir,
+  );
   if (result.code !== 0) throw new Error(`issue-key failed: ${result.stderr}`);
   return result.stdout.trim();
 }
@@ -73,7 +77,10 @@ export interface RunningServer {
   local(publicUrl: string): string;
 }
 
-export async function startServer(env: Record<string, string>, cwd: string): Promise<RunningServer> {
+export async function startServer(
+  env: Record<string, string>,
+  cwd: string,
+): Promise<RunningServer> {
   const child = spawn(process.execPath, [SERVER, "serve"], {
     cwd,
     env: { PATH: process.env["PATH"] ?? "", ...env },
@@ -106,7 +113,9 @@ export async function startServer(env: Record<string, string>, cwd: string): Pro
     stop: () =>
       new Promise((resolve) => {
         child.removeAllListeners("exit");
-        child.once("exit", () => resolve());
+        child.once("exit", () => {
+          resolve();
+        });
         child.kill("SIGTERM");
       }),
   };

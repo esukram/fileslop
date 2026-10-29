@@ -25,7 +25,9 @@ export const SECRET_ACCESS_KEY = "test-secret-key";
 /** Recomputes the SigV4 signature from the received headers, as S3 does. */
 function validSignature(method: string, url: URL, headers: IncomingHttpHeaders): boolean {
   const auth = headers.authorization ?? "";
-  const m = /Credential=[^/]+\/(\d{8})\/([^/]+)\/s3\/aws4_request,SignedHeaders=([^,]+),/.exec(auth);
+  const m = /Credential=[^/]+\/(\d{8})\/([^/]+)\/s3\/aws4_request,SignedHeaders=([^,]+),/.exec(
+    auth,
+  );
   const amzDate = headers["x-amz-date"];
   if (!m?.[3] || typeof amzDate !== "string" || !amzDate.startsWith(m[1] ?? "-")) return false;
   const signed: Record<string, string> = {};
@@ -36,7 +38,9 @@ function validSignature(method: string, url: URL, headers: IncomingHttpHeaders):
       signed[name] = value;
     }
   }
-  const date = new Date(amzDate.replace(/^(\d{4})(\d\d)(\d\d)T(\d\d)(\d\d)(\d\d)Z$/, "$1-$2-$3T$4:$5:$6Z"));
+  const date = new Date(
+    amzDate.replace(/^(\d{4})(\d\d)(\d\d)T(\d\d)(\d\d)(\d\d)Z$/, "$1-$2-$3T$4:$5:$6Z"),
+  );
   const expected = sign(
     {
       method,
@@ -59,7 +63,12 @@ export async function startMockS3(bucket = "test-bucket"): Promise<MockS3> {
     objects: new Map(),
     requests: [],
     failing: false,
-    close: () => new Promise((resolve) => server.close(() => resolve())),
+    close: () =>
+      new Promise((resolve) =>
+        server.close(() => {
+          resolve();
+        }),
+      ),
   };
   const xmlError = (code: string): string =>
     `<?xml version="1.0" encoding="UTF-8"?><Error><Code>${code}</Code></Error>`;
@@ -76,18 +85,29 @@ export async function startMockS3(bucket = "test-bucket"): Promise<MockS3> {
         res.writeHead(status, { "content-type": "application/xml" }).end(xmlError(code));
       };
 
-      if (mock.failing) return reply(500, "InternalError");
-      if (!path.startsWith(`/${bucket}/`)) return reply(404, "NoSuchBucket");
+      if (mock.failing) {
+        reply(500, "InternalError");
+        return;
+      }
+      if (!path.startsWith(`/${bucket}/`)) {
+        reply(404, "NoSuchBucket");
+        return;
+      }
       const url = new URL(req.url ?? "/", `http://${req.headers.host ?? "x"}`);
       if (!validSignature(req.method ?? "", url, req.headers)) {
-        return reply(403, "SignatureDoesNotMatch");
+        reply(403, "SignatureDoesNotMatch");
+        return;
       }
       const hash = createHash("sha256").update(body).digest("hex");
-      if (req.headers["x-amz-content-sha256"] !== hash) return reply(400, "XAmzContentSHA256Mismatch");
+      if (req.headers["x-amz-content-sha256"] !== hash) {
+        reply(400, "XAmzContentSHA256Mismatch");
+        return;
+      }
 
       if (req.method === "PUT") {
         if (req.headers["if-none-match"] === "*" && mock.objects.has(key)) {
-          return reply(412, "PreconditionFailed");
+          reply(412, "PreconditionFailed");
+          return;
         }
         const metadata: Record<string, string> = {};
         for (const [name, value] of Object.entries(req.headers)) {
@@ -105,7 +125,10 @@ export async function startMockS3(bucket = "test-bucket"): Promise<MockS3> {
       }
       if (req.method === "GET") {
         const object = mock.objects.get(key);
-        if (!object) return reply(404, "NoSuchKey");
+        if (!object) {
+          reply(404, "NoSuchKey");
+          return;
+        }
         res.writeHead(200, {
           "content-type": object.contentType,
           "content-length": object.body.length,

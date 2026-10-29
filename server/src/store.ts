@@ -105,7 +105,9 @@ export class S3Store implements ObjectStore {
 export function createStore(config: StoreConfig): ObjectStore {
   const { bucket, region, credentials } = config;
   if (config.endpoint) {
-    const base = config.endpoint.href.endsWith("/") ? config.endpoint.href : `${config.endpoint.href}/`;
+    const base = config.endpoint.href.endsWith("/")
+      ? config.endpoint.href
+      : `${config.endpoint.href}/`;
     return new S3Store(new URL(`${uriEncode(bucket)}/`, base), region, credentials);
   }
   const host =

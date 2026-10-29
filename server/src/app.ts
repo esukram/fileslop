@@ -160,12 +160,7 @@ export function createApp(deps: AppDeps): Server {
     await deps.index.add(entry);
 
     const url = new URL(`${id}/${filename}`, deps.publicUrl).href;
-    sendJson(
-      res,
-      201,
-      { id, url, filename, contentType, size: body.length },
-      { location: url },
-    );
+    sendJson(res, 201, { id, url, filename, contentType, size: body.length }, { location: url });
   }
 
   async function download(res: ServerResponse, id: string, filename: string): Promise<void> {
@@ -232,10 +227,16 @@ export function createApp(deps: AppDeps): Server {
       }
       console.error(err);
       if (err instanceof StorageError) {
-        sendJson(res, 502, { error: "storage_error", message: "The object store failed. Try again later." });
+        sendJson(res, 502, {
+          error: "storage_error",
+          message: "The object store failed. Try again later.",
+        });
         return;
       }
-      sendJson(res, 500, { error: "internal_error", message: "The server failed. Try again later." });
+      sendJson(res, 500, {
+        error: "internal_error",
+        message: "The server failed. Try again later.",
+      });
     });
   });
 }

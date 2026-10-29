@@ -3,7 +3,15 @@ import { execFileSync } from "node:child_process";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { after, before, describe, test } from "node:test";
-import { CLIENT, issueKey, run, type RunningServer, serverEnv, startServer, tempDir } from "./helpers.ts";
+import {
+  CLIENT,
+  issueKey,
+  run,
+  type RunningServer,
+  serverEnv,
+  startServer,
+  tempDir,
+} from "./helpers.ts";
 import { type MockS3, startMockS3 } from "./mock-s3.ts";
 
 describe("client cli", () => {
@@ -27,7 +35,14 @@ describe("client cli", () => {
     work = await tempDir();
     // A git checkout with a GitHub remote, as agents use it.
     execFileSync("git", ["init", "-q", work]);
-    execFileSync("git", ["-C", work, "remote", "add", "origin", "git@github.com:esukram/fileslop.git"]);
+    execFileSync("git", [
+      "-C",
+      work,
+      "remote",
+      "add",
+      "origin",
+      "git@github.com:esukram/fileslop.git",
+    ]);
     await writeFile(join(work, "plan.html"), "<h1>plan</h1>");
     await writeFile(join(work, "data.bin"), "binary");
     await writeFile(join(work, "big.txt"), "x".repeat(5000));
@@ -73,7 +88,10 @@ describe("client cli", () => {
     assert.match(unknown.stderr, /unknown media type[\s\S]*Fix: Pass the media type with --type/);
     const typed = await cli(["upload", "data.bin", "--type", "application/octet-stream"]);
     assert.equal(typed.code, 0, typed.stderr);
-    assert.equal((JSON.parse(typed.stdout) as { contentType: string }).contentType, "application/octet-stream");
+    assert.equal(
+      (JSON.parse(typed.stdout) as { contentType: string }).contentType,
+      "application/octet-stream",
+    );
   });
 
   test("reports server rejections with a fix", async () => {
@@ -111,7 +129,9 @@ describe("client cli", () => {
   });
 
   test("reports an unreachable server with exit code 1", async () => {
-    const result = await cli(["upload", "plan.html"], { FILESLOP_URL: "http://127.0.0.1:9/fileslop/" });
+    const result = await cli(["upload", "plan.html"], {
+      FILESLOP_URL: "http://127.0.0.1:9/fileslop/",
+    });
     assert.equal(result.code, 1);
     assert.match(result.stderr, /cannot reach[\s\S]*Fix: Check FILESLOP_URL/);
   });

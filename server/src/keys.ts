@@ -11,7 +11,10 @@ const HASH_RE = /^[0-9a-f]{64}$/;
 export const generateToken = (): string => TOKEN_PREFIX + randomBytes(32).toString("base64url");
 
 /** Parses the key file: one `username:<sha256 hex of token>` per line. Returns hash → username. */
-export function parseKeys(text: string, warn: (msg: string) => void = console.warn): Map<string, string> {
+export function parseKeys(
+  text: string,
+  warn: (msg: string) => void = console.warn,
+): Map<string, string> {
   const keys = new Map<string, string>();
   text.split("\n").forEach((raw, i) => {
     const line = raw.trim();

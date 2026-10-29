@@ -13,11 +13,11 @@ npx -y fileslop upload plan.html
 
 ## Configuration
 
-| Variable | Config file key | Purpose |
-| --- | --- | --- |
-| `FILESLOP_URL` | `url` | Upload URL of the server. |
-| `FILESLOP_TOKEN` | `token` | Upload token. It starts with `es.fs1.key.`. |
-| `FILESLOP_CONFIG` | – | Path of the config file. |
+| Variable          | Config file key | Purpose                                     |
+| ----------------- | --------------- | ------------------------------------------- |
+| `FILESLOP_URL`    | `url`           | Upload URL of the server.                   |
+| `FILESLOP_TOKEN`  | `token`         | Upload token. It starts with `es.fs1.key.`. |
+| `FILESLOP_CONFIG` | –               | Path of the config file.                    |
 
 The config file is `~/.config/fileslop/config.json` (or `$XDG_CONFIG_HOME/fileslop/config.json`).
 Environment variables win over the config file. `fileslop config` shows the values in use and their source.
@@ -35,11 +35,11 @@ Exit codes: `0` success, `1` upload failed, `2` usage or configuration problem.
 
 ## Source
 
-| File | Purpose |
-| --- | --- |
-| `src/cli.ts` | Commands, help text, upload, git metadata. |
-| `src/config.ts` | Environment and config file. |
-| `src/mime.ts` | Media types for common file extensions. |
+| File            | Purpose                                    |
+| --------------- | ------------------------------------------ |
+| `src/cli.ts`    | Commands, help text, upload, git metadata. |
+| `src/config.ts` | Environment and config file.               |
+| `src/mime.ts`   | Media types for common file extensions.    |
 
 `pnpm build` compiles `src/` to `dist/` with `tsc`. Node does not run TypeScript inside `node_modules`, so the package ships JavaScript.
 The requirements are in [PRD-client-cli](../docs/prds/PRD-client-cli.md).

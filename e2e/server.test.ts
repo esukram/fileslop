@@ -12,7 +12,7 @@ describe("server", () => {
   let dataDir: string;
   let token: string;
 
-  const post = (headers: Record<string, string>, body: BodyInit | null = "<h1>plan</h1>") =>
+  const post = (headers: Record<string, string>, body: string | Uint8Array = "<h1>plan</h1>") =>
     fetch(server.url, { method: "POST", headers, body });
   const valid = (extra: Record<string, string> = {}): Record<string, string> => ({
     authorization: `Bearer ${token}`,
@@ -25,7 +25,10 @@ describe("server", () => {
     mock = await startMockS3();
     dataDir = await tempDir();
     token = await issueKey(dataDir, "alice");
-    server = await startServer(serverEnv(mock, dataDir, { FILESLOP_MAX_UPLOAD_BYTES: "1024" }), dataDir);
+    server = await startServer(
+      serverEnv(mock, dataDir, { FILESLOP_MAX_UPLOAD_BYTES: "1024" }),
+      dataDir,
+    );
   });
   after(async () => {
     await server.stop();
@@ -50,11 +53,13 @@ describe("server", () => {
       { filename: "plan.html", contentType: "text/html; charset=utf-8", size: 13 },
     );
 
-    const [key, object] = [...mock.objects].at(-1) ?? [];
-    assert.match(key ?? "", KEY_RE);
-    assert.equal(object?.body.toString(), "<h1>plan</h1>");
-    assert.equal(object?.contentType, "text/html; charset=utf-8");
-    assert.deepEqual(object?.metadata, {
+    const last = [...mock.objects].at(-1);
+    assert.ok(last);
+    const [key, object] = last;
+    assert.match(key, KEY_RE);
+    assert.equal(object.body.toString(), "<h1>plan</h1>");
+    assert.equal(object.contentType, "text/html; charset=utf-8");
+    assert.deepEqual(object.metadata, {
       "fs-uploader": "alice",
       "fs-filename": "plan.html",
       "fs-username": "esukram",
@@ -207,7 +212,12 @@ describe("server lifecycle", () => {
       dir,
     );
     assert.equal(result.code, 2);
-    for (const name of ["FILESLOP_PUBLIC_URL", "FILESLOP_BACKEND", "FILESLOP_PORT", "FILESLOP_S3_BUCKET"]) {
+    for (const name of [
+      "FILESLOP_PUBLIC_URL",
+      "FILESLOP_BACKEND",
+      "FILESLOP_PORT",
+      "FILESLOP_S3_BUCKET",
+    ]) {
       assert.match(result.stderr, new RegExp(name));
     }
   });

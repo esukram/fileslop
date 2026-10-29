@@ -5,11 +5,11 @@ It has no runtime dependencies. Node.js (24.2 or later) runs the TypeScript sour
 
 ## HTTP interface
 
-| Request | Result |
-| --- | --- |
-| `POST <prefix>/` | Upload. Needs `Authorization: Bearer es.fs1.key.…`, `Content-Type`, `X-FS-Filename`. Optional: `X-FS-Username`, `X-FS-Repository`, `X-FS-Repository-Provider`. Returns `201` and `{id, url, filename, contentType, size}`. |
-| `GET <prefix>/<id>/<filename>` | Returns the file with its media type. `404` for unknown files. |
-| `GET <prefix>/healthz` | Returns `{"status":"ok"}`. |
+| Request                        | Result                                                                                                                                                                                                                     |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST <prefix>/`               | Upload. Needs `Authorization: Bearer es.fs1.key.…`, `Content-Type`, `X-FS-Filename`. Optional: `X-FS-Username`, `X-FS-Repository`, `X-FS-Repository-Provider`. Returns `201` and `{id, url, filename, contentType, size}`. |
+| `GET <prefix>/<id>/<filename>` | Returns the file with its media type. `404` for unknown files.                                                                                                                                                             |
+| `GET <prefix>/healthz`         | Returns `{"status":"ok"}`.                                                                                                                                                                                                 |
 
 Errors have the body `{"error": "<code>", "message": "<text>"}`.
 The requirements are in [PRD-upload](../docs/prds/PRD-upload.md) and [PRD-retrieval](../docs/prds/PRD-retrieval.md).
@@ -32,16 +32,16 @@ Run one server instance per data directory.
 
 ## Source modules
 
-| File | Purpose |
-| --- | --- |
-| `src/main.ts` | Entry point: commands `serve` and `issue-key`. |
-| `src/config.ts` | Reads and checks the `FILESLOP_*` variables. |
-| `src/app.ts` | HTTP routes, header checks, upload and download. |
-| `src/store.ts` | `ObjectStore` port and the S3 adapter for AWS S3 and Hetzner. |
-| `src/sigv4.ts` | AWS Signature Version 4. |
-| `src/keys.ts` | Token format, key file, `issue-key`. |
-| `src/file-index.ts` | Lookup table from file id to object key. |
-| `src/validate.ts` | Header rules and the ISO week. |
+| File                | Purpose                                                       |
+| ------------------- | ------------------------------------------------------------- |
+| `src/main.ts`       | Entry point: commands `serve` and `issue-key`.                |
+| `src/config.ts`     | Reads and checks the `FILESLOP_*` variables.                  |
+| `src/app.ts`        | HTTP routes, header checks, upload and download.              |
+| `src/store.ts`      | `ObjectStore` port and the S3 adapter for AWS S3 and Hetzner. |
+| `src/sigv4.ts`      | AWS Signature Version 4.                                      |
+| `src/keys.ts`       | Token format, key file, `issue-key`.                          |
+| `src/file-index.ts` | Lookup table from file id to object key.                      |
+| `src/validate.ts`   | Header rules and the ISO week.                                |
 
 ## Test
 
