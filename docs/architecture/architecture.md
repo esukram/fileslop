@@ -33,11 +33,11 @@ flowchart LR
 | [ADR-001](ADR-001.md) | Runtime                   | Use Node.js 24.2 or later with native type stripping and no runtime dependencies.          |
 | [ADR-002](ADR-002.md) | Repository layout         | Use one pnpm workspace with `server/`, `client/`, `skills/fileslop/`, `e2e/`, and `docs/`. |
 | [ADR-003](ADR-003.md) | Object store adapter      | Use one S3-protocol adapter with our own Signature V4 code for AWS S3 and Hetzner.         |
-| [ADR-004](ADR-004.md) | Identifier and key layout | Use UUID v4 identifiers and object keys with ISO week folders.                             |
+| [ADR-004](ADR-004.md) | Identifier and key layout | Use object keys with ISO week folders. ADR-019 replaces the UUID v4 identifiers.           |
 | [ADR-005](ADR-005.md) | Lookup index              | Keep the index in memory and persist it in an append-only JSON Lines file.                 |
 | [ADR-006](ADR-006.md) | Authentication            | Use Bearer tokens with a fixed prefix and store only their SHA-256 hashes.                 |
 | [ADR-007](ADR-007.md) | Content type              | Require the client to send the content type. The server never sniffs.                      |
-| [ADR-008](ADR-008.md) | No overwrite              | Reject an existing identifier and use conditional S3 writes.                               |
+| [ADR-008](ADR-008.md) | No overwrite              | Use an index guard and conditional S3 writes. ADR-019 replaces the 409 after a collision.  |
 | [ADR-009](ADR-009.md) | Header validation         | Validate filename and metadata headers strictly and reject invalid values.                 |
 | [ADR-010](ADR-010.md) | Safe delivery             | Deliver files with `nosniff`, a sandbox policy, and immutable cache headers.               |
 | [ADR-011](ADR-011.md) | Upload size               | Buffer the body in memory up to 25 MiB by default.                                         |
@@ -48,3 +48,4 @@ flowchart LR
 | [ADR-016](ADR-016.md) | GitHub and delivery       | Use rulesets, pinned actions, CI checks, and releases with provenance to npm and GHCR.     |
 | [ADR-017](ADR-017.md) | Agent skill               | Supply a short `SKILL.md` for uploads and pull request artifacts.                          |
 | [ADR-018](ADR-018.md) | Documentation language    | Write all text in ASD-STE100 Simplified Technical English.                                 |
+| [ADR-019](ADR-019.md) | File identifiers          | Use 24-character Bech32m identifiers and create a new identifier after a collision.        |

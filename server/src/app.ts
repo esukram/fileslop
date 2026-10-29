@@ -1,11 +1,11 @@
-import { randomUUID } from "node:crypto";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import type { FileIndex, IndexEntry } from "./file-index.ts";
+import { isFileId, newFileId } from "./id.ts";
 import type { KeyStore } from "./keys.ts";
 import { type ObjectStore, StorageError } from "./store.ts";
-import { FILENAME_RE, ID_RE, isMediaType, isoWeek, METADATA_RE } from "./validate.ts";
+import { FILENAME_RE, isMediaType, isoWeek, METADATA_RE, UUID_RE } from "./validate.ts";
 
 export interface AppDeps {
   publicUrl: URL;
@@ -24,6 +24,12 @@ const METADATA_HEADERS = {
   "x-fs-repository": "fs-repository",
   "x-fs-repository-provider": "fs-repository-provider",
 } as const;
+
+/** Attempts to get an unused file id. More collisions mean that the id generator is broken. */
+const ID_ATTEMPTS = 3;
+
+/** UUIDs from v0.1.0 and Bech32m file ids (ADR-019). */
+const isId = (id: string): boolean => UUID_RE.test(id) || isFileId(id);
 
 class HttpError extends Error {
   readonly status: number;
@@ -79,7 +85,7 @@ function readBody(req: IncomingMessage, limit: number): Promise<Buffer | null> {
 export function createApp(deps: AppDeps): Server {
   const prefix = deps.publicUrl.pathname; // Ends with "/".
   const now = deps.now ?? (() => new Date());
-  const newId = deps.newId ?? randomUUID;
+  const newId = deps.newId ?? newFileId;
   /** Ids of uploads in progress, so that two uploads cannot get the same id. */
   const pending = new Set<string>();
   const tooLarge = new HttpError(
@@ -138,18 +144,26 @@ export function createApp(deps: AppDeps): Server {
       res.setHeader("connection", "close");
       throw tooLarge;
     }
-    const id = newId();
-    if (deps.index.get(id) || pending.has(id)) {
-      throw new HttpError(409, "conflict", `The file id ${id} exists already. Upload again.`);
+    // An id collision gets a new id (ADR-019). The log has no ids: they are secrets.
+    for (let attempt = 1; attempt <= ID_ATTEMPTS; attempt++) {
+      const id = newId();
+      // No await between check and reservation, so that two uploads cannot get the same id.
+      if (deps.index.get(id) || pending.has(id)) {
+        console.warn(`Upload: new file id is in use (attempt ${attempt}/${ID_ATTEMPTS}).`);
+        continue;
+      }
+      pending.add(id);
+      try {
+        if (await store(res, id, filename, contentType, uploader, metadata, body)) return;
+      } finally {
+        pending.delete(id);
+      }
+      console.warn(`Upload: store rejected the new key (attempt ${attempt}/${ID_ATTEMPTS}).`);
     }
-    pending.add(id);
-    try {
-      await store(res, id, filename, contentType, uploader, metadata, body);
-    } finally {
-      pending.delete(id);
-    }
+    throw new Error(`Upload: no unused file id after ${ID_ATTEMPTS} attempts.`);
   }
 
+  /** Stores the file and sends 201. Returns false, and sends nothing, if the key exists. */
   async function store(
     res: ServerResponse,
     id: string,
@@ -158,11 +172,9 @@ export function createApp(deps: AppDeps): Server {
     uploader: string,
     metadata: Record<string, string>,
     body: Buffer,
-  ): Promise<void> {
+  ): Promise<boolean> {
     const key = [deps.baseDir, isoWeek(now()), id, filename].filter(Boolean).join("/");
-    if ((await deps.store.put(key, body, contentType, metadata)) === "exists") {
-      throw new HttpError(409, "conflict", `The file id ${id} exists already. Upload again.`);
-    }
+    if ((await deps.store.put(key, body, contentType, metadata)) === "exists") return false;
     const entry: IndexEntry = {
       id,
       key,
@@ -176,6 +188,7 @@ export function createApp(deps: AppDeps): Server {
 
     const url = new URL(`${id}/${filename}`, deps.publicUrl).href;
     sendJson(res, 201, { id, url, filename, contentType, size: body.length }, { location: url });
+    return true;
   }
 
   async function download(res: ServerResponse, id: string, filename: string): Promise<void> {
@@ -216,7 +229,7 @@ export function createApp(deps: AppDeps): Server {
       throw new HttpError(405, "method_not_allowed", "Use GET.", { allow: "GET, HEAD" });
     }
     const match = path.startsWith(prefix) ? path.slice(prefix.length).split("/") : [];
-    if (match.length === 2 && ID_RE.test(match[0] ?? "") && match[1]) {
+    if (match.length === 2 && isId(match[0] ?? "") && match[1]) {
       if (read) return download(res, match[0] ?? "", match[1]);
       throw new HttpError(405, "method_not_allowed", "Use GET to read a file.", {
         allow: "GET, HEAD",

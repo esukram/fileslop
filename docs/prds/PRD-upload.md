@@ -34,14 +34,14 @@ GitHub pull requests cannot attach arbitrary files.
 - FR-6: The server MUST require a syntactically valid `Content-Type` header. It MUST NOT infer or sniff the type.
 - FR-7: The server MUST accept an empty body and store a file with 0 bytes.
 - FR-8: The server MUST reject a body larger than `FILESLOP_MAX_UPLOAD_BYTES`.
-- FR-9: The server MUST create a new UUID v4 identifier for each upload.
+- FR-9: The server MUST create a new identifier for each upload as described in [ADR-019](../architecture/ADR-019.md): 18 random Bech32 characters and a 6-character Bech32m checksum.
 - FR-10: The server MUST store the file as described in [PRD-storage-backends](PRD-storage-backends.md).
 - FR-11: On success, the server MUST return status 201, a `Location` header with the public URL, and this JSON body:
 
 ```json
 {
-  "id": "550e8400-e29b-41d4-a716-446655440000",
-  "url": "https://files.example.org/fileslop/550e8400-e29b-41d4-a716-446655440000/plan.html",
+  "id": "x6cnmzueszjvmgrevycrmwjd",
+  "url": "https://files.example.org/fileslop/x6cnmzueszjvmgrevycrmwjd/plan.html",
   "filename": "plan.html",
   "contentType": "text/html",
   "size": 1234
@@ -56,7 +56,6 @@ GitHub pull requests cannot attach arbitrary files.
 | `invalid_header`       | 400    | A header is missing or has an invalid value. |
 | `missing_content_type` | 415    | The content type is missing or invalid.      |
 | `payload_too_large`    | 413    | The body is larger than the limit.           |
-| `conflict`             | 409    | The identifier or the object already exists. |
 | `storage_error`        | 502    | The object store failed.                     |
 | `internal_error`       | 500    | Another server error occurred.               |
 
@@ -73,9 +72,13 @@ flowchart TD
   hdr -- No --> e400[400 invalid_header]
   hdr -- Yes --> len{"Content-Length or body<br/>larger than the limit?"}
   len -- Yes --> e413[413 payload_too_large]
-  len -- No --> id{"New id in the index<br/>or in progress?"}
-  id -- Yes --> e409[409 conflict]
+  len -- No --> gen[Create a new id]
+  gen --> id{"Id in the index<br/>or in progress?"}
   id -- No --> store[Store write]
+  id -- Yes --> try{"Fewer than<br/>three ids?"}
+  store -- Key exists --> try
+  try -- Yes --> gen
+  try -- No --> e500[500 internal_error]
 ```
 
 The store write:
@@ -98,7 +101,7 @@ sequenceDiagram
     end
   else Key exists
     O-->>S: 412 or 409
-    S-->>C: 409 conflict
+    S->>S: Try a new id (see the diagram above)
   else Store failure
     O-->>S: Other error
     S-->>C: 502 storage_error
@@ -106,7 +109,11 @@ sequenceDiagram
 ```
 
 - FR-13: The server MUST NOT write an index line if the store write fails.
-- FR-14: The server MUST return 409 `conflict` if another upload in progress uses the same identifier.
+- FR-14: The server MUST try a maximum of three identifiers, and then return 500 `internal_error`. The server MUST NOT create a new identifier after a store or index failure.
+  The server MUST create a new identifier in these cases:
+  - The identifier is in the index.
+  - An upload in progress uses the identifier.
+  - The store reports an existing key.
 - FR-15: The server MUST return 500 `internal_error` for other errors. Example: the index write fails after the store write.
   In this case, the object is in the store, but the in-memory index has no entry for it. The URL does not work.
   The index file can contain the record if the write completed before the error. Then the URL works after a restart.
@@ -130,5 +137,5 @@ sequenceDiagram
 - AC-6: An upload with an empty body returns 201, and GET returns 0 bytes. (e2e: `e2e/server.test.ts`)
 - AC-7: An upload larger than the limit returns 413 `payload_too_large`. A chunked upload without `Content-Length` that is larger than the limit also returns 413. (e2e with a small limit: `e2e/server.test.ts`)
 - AC-8: A store failure returns 502 `storage_error`. (e2e with a failing mock: `e2e/server.test.ts`)
-- AC-9: Two concurrent uploads that get the same identifier return 201 and 409. The store receives one PUT only. (unit: `server/test/app.test.ts`)
-- AC-10: A failed index write after a successful store write returns 500 `internal_error`. (not automated)
+- AC-9: Two concurrent uploads that get the same identifier both return 201 with different identifiers. (unit: `server/test/app.test.ts`)
+- AC-10: A failed index write after a successful store write returns 500 `internal_error`. The server does not try a new identifier. (unit: `server/test/app.test.ts`)
