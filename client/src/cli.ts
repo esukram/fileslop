@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { execFileSync } from "node:child_process";
-import { readFileSync, statSync } from "node:fs";
+import { closeSync, fstatSync, openSync, readFileSync } from "node:fs";
 import { basename } from "node:path";
 import { parseArgs } from "node:util";
 import { maskToken, resolveConfig, TOKEN_PREFIX } from "./config.ts";
@@ -190,8 +190,14 @@ async function upload(argv: string[]): Promise<void> {
 
   let body: Buffer;
   try {
-    if (!statSync(path).isFile()) throw new Error("not a file");
-    body = readFileSync(path);
+    // Check and read through one file descriptor, so that both see the same file.
+    const fd = openSync(path, "r");
+    try {
+      if (!fstatSync(fd).isFile()) throw new Error("not a file");
+      body = readFileSync(fd);
+    } finally {
+      closeSync(fd);
+    }
   } catch {
     throw new UsageError(
       `cannot read the file ${path}`,

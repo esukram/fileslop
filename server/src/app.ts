@@ -230,7 +230,8 @@ export function createApp(deps: AppDeps): Server {
     res.on("finish", () => {
       const ms = Math.round(performance.now() - started);
       // Log the path only: a query string can contain secrets.
-      const path = (req.url ?? "-").split("?")[0] ?? "-";
+      // Replace control and non-ASCII characters, so that a request cannot forge log lines.
+      const path = ((req.url ?? "-").split("?")[0] ?? "-").replace(/[^\x21-\x7e]/g, "?");
       console.log(`${req.method ?? "-"} ${path} ${res.statusCode} ${ms}ms`);
     });
     route(req, res).catch((err: unknown) => {

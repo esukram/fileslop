@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { readFile, stat } from "node:fs/promises";
+import { type FileHandle, open } from "node:fs/promises";
 import { dirname } from "node:path";
 import { appendLine, makeDir } from "./append-line.ts";
 import { sha256Hex } from "./sigv4.ts";
@@ -54,18 +54,24 @@ export class KeyStore {
   }
 
   async #reload(): Promise<void> {
-    let version: string;
+    let handle: FileHandle;
     try {
-      const s = await stat(this.#file);
-      version = `${s.mtimeMs}:${s.size}`;
+      handle = await open(this.#file, "r");
     } catch {
       this.#keys = new Map();
       this.#version = "";
       return;
     }
-    if (version === this.#version) return;
-    this.#keys = parseKeys(await readFile(this.#file, "utf8"));
-    this.#version = version;
+    // Check and read through one handle, so that both see the same file.
+    try {
+      const s = await handle.stat();
+      const version = `${s.mtimeMs}:${s.size}`;
+      if (version === this.#version) return;
+      this.#keys = parseKeys(await handle.readFile("utf8"));
+      this.#version = version;
+    } finally {
+      await handle.close();
+    }
   }
 
   async load(): Promise<void> {
