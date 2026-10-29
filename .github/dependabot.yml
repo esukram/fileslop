@@ -20,6 +20,10 @@ updates:
       dev-tooling:
         dependency-type: development
         patterns: ["*"]
+    ignore:
+      # typescript-eslint 8 supports only TypeScript < 6.1. See docs/architecture/ADR-015.md.
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: docker
     directory: /server
