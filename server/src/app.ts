@@ -161,7 +161,7 @@ export function createApp(deps: AppDeps): Server {
   ): Promise<void> {
     const key = [deps.baseDir, isoWeek(now()), id, filename].filter(Boolean).join("/");
     if ((await deps.store.put(key, body, contentType, metadata)) === "exists") {
-      throw new HttpError(409, "conflict", `The object ${key} exists already. Upload again.`);
+      throw new HttpError(409, "conflict", `The file id ${id} exists already. Upload again.`);
     }
     const entry: IndexEntry = {
       id,
