@@ -5,6 +5,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). The
 
 ## [Unreleased]
 
+### Added
+
+- Documentation: a start page `docs/index.md` that links to all documents.
+
 ## [0.1.0] - 2026-10-29
 
 The first release. People and AI agents can now share files with one command. GitHub cannot attach arbitrary files to pull requests, so a link is necessary.
