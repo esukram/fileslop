@@ -5,11 +5,6 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). The
 
 ## [Unreleased]
 
-### Added
-
-- Documentation: a start page `docs/index.md` that links to all documents.
-- Documentation: Mermaid diagrams in the architecture decision records and the product requirements.
-
 ### Changed
 
 - Server (breaking): new files get a short identifier with 24 characters instead of a UUID: 18 random Bech32 characters and a Bech32m checksum. URLs are 12 characters shorter. Clients that check the identifier format must accept the new format. Links from 0.1.0 continue to work.
@@ -20,10 +15,25 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). The
 - Server: the server closes the response of the object store when a key exists already.
 - Documentation: the known problem with the Dynatrace OneAgent names the correct cause. Real User Monitoring changes incoming requests and HTML responses, not outgoing requests.
 
+## [0.1.1] - 2026-10-29
+
+The first release that the release workflow publishes to npm with provenance. It fixes two CodeQL findings.
+
 ### Security
 
-- Server and client: the server checks and reads the key file through one file handle. The client checks and reads the upload file through one file descriptor. Thus the check and the read always see the same file.
-- Server: the request log replaces control characters and non-ASCII characters in the path. Thus a request cannot add false lines to the log.
+- Client: the CLI checks and reads the upload file through one file descriptor, so that the check and the read see the same file.
+- Server: the server checks and reads `keys.txt` through one file handle.
+- Server: the request log replaces control and non-ASCII characters in the path, so that a request cannot forge log lines.
+
+### Added
+
+- Documentation: a start page `docs/index.md` that links to all documents.
+- Documentation: Mermaid diagrams in the architecture decisions and PRDs.
+- Documentation: the one-time npm publishing setup in the operations guide.
+
+### Changed
+
+- Client: the README links to the documentation on GitHub, so that the links also work on npmjs.com.
 
 ## [0.1.0] - 2026-10-29
 
@@ -44,5 +54,6 @@ The first release. People and AI agents can now share files with one command. Gi
 - Documentation: product requirements, architecture decisions and an operations guide.
 - Repository: CI on Node.js 24 and 26, and a release workflow for the GitHub release, the container image and npm.
 
-[Unreleased]: https://github.com/esukram/fileslop/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/esukram/fileslop/compare/v0.1.1..HEAD
+[0.1.1]: https://github.com/esukram/fileslop/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/esukram/fileslop/releases/tag/v0.1.0

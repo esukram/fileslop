@@ -5,7 +5,7 @@ Humans and AI agents use it. The help text and the error messages tell the reade
 The CLI has no runtime dependencies. It needs Node.js 24.2 or later.
 
 On success, the CLI prints one line of JSON: `{"id","url","filename","contentType","size"}`.
-To install and use the CLI, see [operations](../docs/operations.md#use-the-client).
+To install and use the CLI, see [operations](https://github.com/esukram/fileslop/blob/main/docs/operations.md#use-the-client).
 
 Each GitHub release also has the package as `fileslop.tgz`.
 
@@ -40,4 +40,4 @@ Exit codes: `0` success, `1` upload failed, `2` usage or configuration problem.
 | `src/mime.ts`   | Media types for common file extensions.    |
 
 `pnpm build` compiles `src/` to `dist/` with `tsc`. Node does not run TypeScript inside `node_modules`, so the package ships JavaScript.
-The requirements are in [PRD-client-cli](../docs/prds/PRD-client-cli.md).
+The requirements are in [PRD-client-cli](https://github.com/esukram/fileslop/blob/main/docs/prds/PRD-client-cli.md).
