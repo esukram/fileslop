@@ -11,6 +11,21 @@ The system has four components:
 The server keeps a lookup index and a key file in a local data folder.
 For product requirements, see [PRDs](../prds/prds.md).
 
+```mermaid
+flowchart LR
+  human([Developer]) --> cli
+  agent([AI agent]) --> cli["Client CLI<br/>npx -y fileslop"]
+  agent -. loads .-> skill["Agent skill<br/>SKILL.md"]
+  cli -- "POST {prefix}/<br/>Bearer token" --> server
+  reader([Reviewer in a browser]) -- "GET {prefix}/{id}/{filename}<br/>no token" --> server
+  subgraph host [Server host]
+    server[Fileslop server]
+    data[("Data folder<br/>index.jsonl, keys.txt")]
+  end
+  server <--> data
+  server -- "PUT and GET<br/>Signature V4" --> store[("Object store<br/>AWS S3 or Hetzner")]
+```
+
 ## Architecture decision records
 
 | ADR                   | Title                     | Decision                                                                                   |
