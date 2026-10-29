@@ -4,10 +4,10 @@
   "type": "module",
   "packageManager": "pnpm@12.15.0",
   "engines": {
-    "node": ">=24"
+    "node": ">=24.2"
   },
   "scripts": {
-    "lint": "eslint .",
+    "lint": "eslint --flag unstable_native_nodejs_ts_config .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc -p .",
