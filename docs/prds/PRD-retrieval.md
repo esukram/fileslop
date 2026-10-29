@@ -28,6 +28,8 @@ The file must not harm the reader or the Fileslop origin.
 ## Functional requirements
 
 - FR-1: The server MUST deliver files with `GET <prefix>/<id>/<filename>` without authentication.
+  `<id>` is a UUID from v0.1.0 or a Bech32m identifier with a correct checksum (see [ADR-019](../architecture/ADR-019.md)).
+  For other values, the server MUST return 404 `not_found`.
 - FR-2: The server MUST read the object key from the index. It MUST NOT list the bucket.
 - FR-3: The server MUST return status 200 and the stored bytes for a known identifier and the correct filename.
 - FR-4: The response MUST have the stored `Content-Type`.
@@ -41,8 +43,10 @@ The file must not harm the reader or the Fileslop origin.
 
 ```mermaid
 flowchart TD
-  req(["GET {prefix}/{id}/{filename}"]) --> idx{Id in the index?}
-  idx -- No --> nf[404 not_found]
+  req(["GET {prefix}/{id}/{filename}"]) --> fmt{"UUID or id with<br/>a correct checksum?"}
+  fmt -- No --> nf[404 not_found]
+  fmt -- Yes --> idx{Id in the index?}
+  idx -- No --> nf
   idx -- Yes --> fn{Stored filename?}
   fn -- No --> nf
   fn -- Yes --> get[One GET to the object store]

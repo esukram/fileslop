@@ -22,7 +22,7 @@ Fileslop closes this gap. You upload a file with one command. You get a URL. You
 
 ```sh
 $ npx -y fileslop upload plan.html
-{"id":"550e8400-e29b-41d4-a716-446655440000","url":"https://files.example.org/fileslop/550e8400-e29b-41d4-a716-446655440000/plan.html","filename":"plan.html","contentType":"text/html; charset=utf-8","size":1234}
+{"id":"x6cnmzueszjvmgrevycrmwjd","url":"https://files.example.org/fileslop/x6cnmzueszjvmgrevycrmwjd/plan.html","filename":"plan.html","contentType":"text/html; charset=utf-8","size":1234}
 ```
 
 ## Principles

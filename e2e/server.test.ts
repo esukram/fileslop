@@ -6,7 +6,8 @@ import { issueKey, PUBLIC_URL, run, SERVER, serverEnv, startServer, tempDir } fr
 import type { RunningServer } from "./helpers.ts";
 import { type MockS3, startMockS3 } from "./mock-s3.ts";
 
-const KEY_RE = /^fileslop\/\d{4}-\d{2}\/[0-9a-f-]{36}\/plan\.html$/;
+const ID = "[qpzry9x8gf2tvdw0s3jn54khce6mua7l]{24}";
+const KEY_RE = new RegExp(`^fileslop/\\d{4}-\\d{2}/${ID}/plan\\.html$`);
 
 describe("server", () => {
   let mock: MockS3;
@@ -47,7 +48,7 @@ describe("server", () => {
     );
     assert.equal(res.status, 201);
     const body = (await res.json()) as Record<string, unknown>;
-    assert.match(String(body["id"]), /^[0-9a-f-]{36}$/);
+    assert.match(String(body["id"]), new RegExp(`^${ID}$`));
     assert.equal(body["url"], `${PUBLIC_URL}${String(body["id"])}/plan.html`);
     assert.equal(res.headers.get("location"), body["url"]);
     assert.deepEqual(
@@ -165,17 +166,22 @@ describe("server", () => {
 
   test("never overwrites an existing object", async () => {
     const before = mock.objects.size;
-    // Make every key exist in the store: the conditional write must fail.
+    const requests = mock.requests.length;
+    // Make every key exist in the store: each conditional write must fail.
     const realHas = mock.objects.has.bind(mock.objects);
     mock.objects.has = () => true;
     try {
       const res = await post(valid());
-      assert.equal(res.status, 409);
-      assert.equal(((await res.json()) as { error: string }).error, "conflict");
+      assert.equal(res.status, 500);
+      assert.equal(((await res.json()) as { error: string }).error, "internal_error");
     } finally {
       mock.objects.has = realHas;
     }
     assert.equal(mock.objects.size, before);
+    // Three attempts, each with a new id.
+    const puts = mock.requests.slice(requests).filter((r) => r.method === "PUT");
+    assert.equal(puts.length, 3);
+    assert.equal(new Set(puts.map((r) => r.key)).size, 3);
   });
 
   test("reports object store failures as 502", async () => {

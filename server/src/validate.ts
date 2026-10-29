@@ -2,7 +2,8 @@
 
 export const FILENAME_RE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,254}$/;
 export const METADATA_RE = /^[A-Za-z0-9][A-Za-z0-9._/-]{0,127}$/;
-export const ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+/** File ids from v0.1.0. New ids are Bech32m (see id.ts). */
+export const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 // RFC 9110 media type: type "/" subtype *( OWS ";" OWS parameter ).
 const TOKEN = "[!#$%&'*+.^_`|~0-9A-Za-z-]+";

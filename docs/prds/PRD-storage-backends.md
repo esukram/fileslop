@@ -36,9 +36,9 @@ Stored files must never change after upload.
 - FR-8: The server MUST store the content type of the upload as the object `Content-Type`.
 - FR-9: The server MUST store this metadata as `x-amz-meta-*` headers: `fs-filename`, `fs-uploader`, and, if present, `fs-username`, `fs-repository`, `fs-repository-provider`.
 - FR-10: The server MUST send `If-None-Match: *` with each PUT.
-- FR-11: The server MUST return 409 `conflict` if the identifier is already in the index, or if another upload in progress uses it.
-- FR-12: The server MUST return 409 `conflict` if the store returns 412 or 409.
-- FR-13: The server MUST NOT retry with a new identifier.
+- FR-11: The server MUST create a new identifier if the identifier is already in the index, or if another upload in progress uses it.
+- FR-12: The server MUST create a new identifier if the store returns 412 or 409.
+- FR-13: The server MUST try a maximum of three identifiers, and then return 500 `internal_error` (see [ADR-019](../architecture/ADR-019.md)).
 - FR-14: The server MUST append one line to `<FILESLOP_DATA_DIR>/index.jsonl` after each successful store write. It MUST flush the line to disk with `fsync` before it sends the 201 response.
 - FR-15: The server MUST load the index file at start. It MUST skip a line that is not valid JSON and write a warning.
 
@@ -54,8 +54,8 @@ Stored files must never change after upload.
 - AC-2: The ISO week function returns `2026-53` for 2027-01-01 and `2025-01` for 2024-12-30. (unit: `server/test/validate.test.ts`)
 - AC-3: The endpoint resolver returns the correct URLs for `aws_s3`, `hetzner`, and the override. (unit: `server/test/store.test.ts`)
 - AC-4: After an upload, the mock S3 server has the object at the expected key with the expected metadata. (e2e: `e2e/server.test.ts`)
-- AC-5: If the key exists in the mock, the mock returns 412, and the server returns 409 `conflict`. (e2e: `e2e/server.test.ts`)
+- AC-5: If every key exists in the mock, the mock returns 412 three times, each time for a different identifier, and the server returns 500 `internal_error`. (e2e: `e2e/server.test.ts`)
 - AC-6: After a server restart, a GET of an earlier upload returns 200. (e2e: `e2e/server.test.ts`)
 - AC-7: The index keeps its records after a partial last line, and the next record goes on a new line. (unit: `server/test/file-index.test.ts`)
-- AC-8: Two concurrent uploads with the same identifier give one PUT to the store and one 409. (unit: `server/test/app.test.ts`)
+- AC-8: Two concurrent uploads that get the same identifier give two PUTs with different identifiers. (unit: `server/test/app.test.ts`)
 - AC-9: The server signs with the AWS region in the `aws_s3` backend. (e2e: `e2e/server.test.ts`)

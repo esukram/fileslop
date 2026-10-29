@@ -9,6 +9,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). The
 
 - Documentation: a start page `docs/index.md` that links to all documents.
 
+### Changed
+
+- Server: new files get a short identifier with 24 characters instead of a UUID: 18 random Bech32 characters and a Bech32m checksum. URLs are 12 characters shorter. Links from 0.1.0 continue to work.
+- Server: after an identifier collision, the server creates a new identifier. It does not return 409 `conflict` anymore. After three collisions in sequence, it returns 500 `internal_error`.
+
 ### Fixed
 
 - Server: the server closes the response of the object store when a key exists already.
