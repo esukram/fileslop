@@ -39,3 +39,24 @@ test("createStore resolves the endpoint of each backend", async () => {
     "http://127.0.0.1:9000/prefix/my-bucket/fileslop/2026-44/id/plan.html",
   );
 });
+
+test("put cancels the response body when the key exists", async () => {
+  for (const status of [409, 412]) {
+    let cancelled = false;
+    const body = new ReadableStream({
+      cancel: () => {
+        cancelled = true;
+      },
+    });
+    globalThis.fetch = () => Promise.resolve(new Response(body, { status }));
+    const store = createStore({
+      backend: "hetzner",
+      bucket: "my-bucket",
+      region: "fsn1",
+      endpoint: undefined,
+      credentials: { accessKeyId: "a", secretAccessKey: "s" },
+    });
+    assert.equal(await store.put("k", new Uint8Array([1]), "text/plain", {}), "exists");
+    assert.ok(cancelled, `HTTP ${status}`);
+  }
+});

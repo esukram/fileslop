@@ -56,7 +56,10 @@ export class S3Store implements ObjectStore {
     };
     for (const [name, value] of Object.entries(metadata)) headers[`x-amz-meta-${name}`] = value;
     const res = await this.#send("PUT", key, headers, body);
-    if (res.status === 412 || res.status === 409) return "exists";
+    if (res.status === 412 || res.status === 409) {
+      await res.body?.cancel();
+      return "exists";
+    }
     if (!res.ok) throw new StorageError(`PUT ${key}: HTTP ${res.status} ${await res.text()}`);
     await res.body?.cancel();
     return "created";
