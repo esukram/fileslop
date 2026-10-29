@@ -33,8 +33,8 @@ The command prints one line of JSON. Use the `url` value:
 ## Attach a file to a GitHub pull request
 
 ```sh
-url=$(npx -y fileslop upload report.html | jq -r .url)
-gh pr comment <number> --body "Report: $url"
+url=$(npx -y fileslop upload report.html | jq -er .url) &&
+  gh pr comment <number> --body "Report: $url"
 ```
 
 For an image, use `![screenshot]($url)` in the comment body.

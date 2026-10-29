@@ -4,14 +4,10 @@
 Humans and AI agents use it. The help text and the error messages tell the reader how to fix each problem.
 The CLI has no runtime dependencies. It needs Node.js 24.2 or later.
 
-```sh
-export FILESLOP_URL=https://files.example.org/fileslop/
-export FILESLOP_TOKEN=es.fs1.key.…
-npx -y fileslop upload plan.html
-# {"id":"…","url":"https://files.example.org/fileslop/<id>/plan.html","filename":"plan.html","contentType":"text/html; charset=utf-8","size":1234}
-```
+On success, the CLI prints one line of JSON: `{"id","url","filename","contentType","size"}`.
+To install and use the CLI, see [operations](../docs/operations.md#use-the-client).
 
-Each GitHub release also has the package as `fileslop.tgz`. See [operations](../docs/operations.md#use-the-client).
+Each GitHub release also has the package as `fileslop.tgz`.
 
 ## Configuration
 

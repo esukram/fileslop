@@ -28,11 +28,13 @@ export function loadConfig(env: NodeJS.ProcessEnv): Config {
     if (value === undefined) problems.push(`${name} is required`);
     return value ?? "";
   };
-  const int = (name: string, fallback: number, min = 1): number => {
+  const int = (name: string, fallback: number, min = 1, max = Number.MAX_SAFE_INTEGER): number => {
     const raw = env[name]?.trim();
     if (!raw) return fallback;
     const n = Number(raw);
-    if (!Number.isSafeInteger(n) || n < min) problems.push(`${name} must be an integer >= ${min}`);
+    if (!Number.isSafeInteger(n) || n < min || n > max) {
+      problems.push(`${name} must be an integer from ${min} to ${max}`);
+    }
     return n;
   };
 
@@ -77,7 +79,7 @@ export function loadConfig(env: NodeJS.ProcessEnv): Config {
 
   const config: Config = {
     host: get("FILESLOP_HOST", "0.0.0.0"),
-    port: int("FILESLOP_PORT", 8080, 0),
+    port: int("FILESLOP_PORT", 8080, 0, 65535),
     publicUrl,
     baseDir: get("FILESLOP_BASE_DIR", "fileslop").replace(/^\/+|\/+$/g, ""),
     dataDir: dataDir(env),

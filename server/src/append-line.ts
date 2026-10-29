@@ -23,8 +23,9 @@ export async function appendLine(file: string, line: string, mode = 0o644): Prom
   } finally {
     await handle.close();
   }
-  if (size === 0) {
-    // Flush the directory entry of a new file too.
+  // Flush the directory too. A concurrent append can have created the file a moment ago,
+  // so do this for each append, not only for the first one.
+  {
     const dir = await open(dirname(file), "r");
     try {
       await dir.sync();
