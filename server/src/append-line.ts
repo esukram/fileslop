@@ -1,5 +1,5 @@
 import { mkdir, open } from "node:fs/promises";
-import { dirname } from "node:path";
+import { dirname, resolve } from "node:path";
 
 /**
  * Appends one line and flushes it to disk before it returns.
@@ -37,12 +37,15 @@ async function syncDir(path: string): Promise<void> {
   }
 }
 
-/** Creates `dir` and its missing parents, and flushes each new directory entry to disk. */
+/**
+ * Creates `dir` and its missing parents, then flushes `dir` and each parent up to the root.
+ * The flush also covers folders that an earlier process created but did not flush.
+ * Callers: server start and `issue-key`, so the few extra fsync calls do not matter.
+ */
 export async function makeDir(dir: string): Promise<void> {
-  const first = await mkdir(dir, { recursive: true });
-  if (first === undefined) return;
-  for (let d = dir; ; d = dirname(d)) {
-    await syncDir(dirname(d));
-    if (d === first) break;
+  await mkdir(dir, { recursive: true });
+  for (let d = resolve(dir); ; d = dirname(d)) {
+    await syncDir(d);
+    if (dirname(d) === d) break;
   }
 }
