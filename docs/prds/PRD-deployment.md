@@ -59,13 +59,13 @@ flowchart LR
 5. Start the container. The image does not contain a `.env` file. Give the file to Docker with `--env-file`:
 
    ```sh
-   docker run --env-file .env -v fileslop-data:/data -p 8080:8080 ghcr.io/esukram/fileslop-server:0.1.0
+   docker run --env-file .env -v fileslop-data:/data -p 8080:8080 ghcr.io/esukram/fileslop-server:0.2.0
    ```
 
 6. Create a token for each user. Use the same volume:
 
    ```sh
-   docker run --rm -v fileslop-data:/data ghcr.io/esukram/fileslop-server:0.1.0 issue-key <username>
+   docker run --rm -v fileslop-data:/data ghcr.io/esukram/fileslop-server:0.2.0 issue-key <username>
    ```
 
 7. Give the token to the user. The command shows the token one time only.

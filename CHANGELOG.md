@@ -5,9 +5,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). The
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-29
+
+File URLs are shorter. New files get a 24-character identifier with a checksum, and the server handles identifier collisions itself. Links from 0.1.x continue to work.
+This release has breaking changes for clients that check the identifier format or expect 409 `conflict`.
+
 ### Changed
 
-- Server (breaking): new files get a short identifier with 24 characters instead of a UUID: 18 random Bech32 characters and a Bech32m checksum. URLs are 12 characters shorter. Clients that check the identifier format must accept the new format. Links from 0.1.0 continue to work.
+- Server (breaking): new files get a short identifier with 24 characters instead of a UUID: 18 random Bech32 characters and a Bech32m checksum. URLs are 12 characters shorter. Clients that check the identifier format must accept the new format. Links from 0.1.x continue to work.
 - Server (breaking): after an identifier collision, the server creates a new identifier. It does not return 409 `conflict` anymore. After three collisions in sequence, it returns 500 `internal_error`. Clients must not expect 409.
 
 ### Fixed
@@ -54,6 +59,7 @@ The first release. People and AI agents can now share files with one command. Gi
 - Documentation: product requirements, architecture decisions and an operations guide.
 - Repository: CI on Node.js 24 and 26, and a release workflow for the GitHub release, the container image and npm.
 
-[Unreleased]: https://github.com/esukram/fileslop/compare/v0.1.1..HEAD
+[Unreleased]: https://github.com/esukram/fileslop/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/esukram/fileslop/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/esukram/fileslop/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/esukram/fileslop/releases/tag/v0.1.0

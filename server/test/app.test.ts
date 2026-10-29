@@ -147,7 +147,7 @@ test("a store failure does not try a new id", async (t) => {
   }
 });
 
-test("serves files with UUIDs from v0.1.0 and with Bech32m ids", async (t) => {
+test("serves files with UUIDs from versions 0.1.x and with Bech32m ids", async (t) => {
   const uuid = "550e8400-e29b-41d4-a716-446655440000";
   const entry = (id: string) =>
     JSON.stringify({
