@@ -1,4 +1,4 @@
-import { open } from "node:fs/promises";
+import { mkdir, open } from "node:fs/promises";
 import { dirname } from "node:path";
 
 /**
@@ -25,12 +25,24 @@ export async function appendLine(file: string, line: string, mode = 0o644): Prom
   }
   // Flush the directory too. A concurrent append can have created the file a moment ago,
   // so do this for each append, not only for the first one.
-  {
-    const dir = await open(dirname(file), "r");
-    try {
-      await dir.sync();
-    } finally {
-      await dir.close();
-    }
+  await syncDir(dirname(file));
+}
+
+async function syncDir(path: string): Promise<void> {
+  const dir = await open(path, "r");
+  try {
+    await dir.sync();
+  } finally {
+    await dir.close();
+  }
+}
+
+/** Creates `dir` and its missing parents, and flushes each new directory entry to disk. */
+export async function makeDir(dir: string): Promise<void> {
+  const first = await mkdir(dir, { recursive: true });
+  if (first === undefined) return;
+  for (let d = dir; ; d = dirname(d)) {
+    await syncDir(dirname(d));
+    if (d === first) break;
   }
 }

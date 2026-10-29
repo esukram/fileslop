@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto";
-import { mkdir, readFile, stat } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 import { dirname } from "node:path";
-import { appendLine } from "./append-line.ts";
+import { appendLine, makeDir } from "./append-line.ts";
 import { sha256Hex } from "./sigv4.ts";
 
 /** Fixed prefix so that secret scanners can find leaked tokens. */
@@ -79,7 +79,7 @@ export async function issueKey(file: string, username: string): Promise<string> 
     throw new Error(`invalid username "${username}": use 1-64 characters of A-Z a-z 0-9 . _ -`);
   }
   const token = generateToken();
-  await mkdir(dirname(file), { recursive: true });
+  await makeDir(dirname(file));
   await appendLine(file, `${username}:${sha256Hex(token)}`, 0o600);
   return token;
 }

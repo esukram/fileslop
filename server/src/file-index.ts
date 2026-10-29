@@ -1,6 +1,6 @@
-import { mkdir, readFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import { dirname } from "node:path";
-import { appendLine } from "./append-line.ts";
+import { appendLine, makeDir } from "./append-line.ts";
 
 export interface IndexEntry {
   id: string;
@@ -26,7 +26,7 @@ export class FileIndex {
 
   static async open(file: string): Promise<FileIndex> {
     const index = new FileIndex(file);
-    await mkdir(dirname(file), { recursive: true });
+    await makeDir(dirname(file));
     let text = "";
     try {
       text = await readFile(file, "utf8");

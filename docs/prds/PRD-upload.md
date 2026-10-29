@@ -63,11 +63,13 @@ GitHub pull requests cannot attach arbitrary files.
 - FR-13: The server MUST NOT write an index line if the store write fails.
 - FR-14: The server MUST return 409 `conflict` if another upload in progress uses the same identifier.
 - FR-15: The server MUST return 500 `internal_error` for other errors. Example: the index write fails after the store write.
-  In this case, the object is in the store, but the index has no entry for it. The URL of the object does not work.
+  In this case, the object is in the store, but the in-memory index has no entry for it. The URL does not work.
+  The index file can contain the record if the write completed before the error. Then the URL works after a restart.
 
 ## Non-functional requirements
 
-- NFR-1: The server MUST NOT read more than the upload limit of body data for one request.
+- NFR-1: The server MUST NOT keep more than the upload limit of body data for one request.
+  The server rejects the request when a received chunk makes the total larger than the limit.
   The server keeps the received chunks and then joins them into one buffer.
   Thus the peak memory for one request body is approximately two times the upload limit.
 - NFR-2: If the `Content-Length` header is larger than the limit, the server MUST return 413 before it reads the body.
