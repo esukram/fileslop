@@ -41,6 +41,7 @@ The file must not harm the reader or the Fileslop origin.
 - FR-9: The server MUST return status 200 with `{"status":"ok"}` for `GET <prefix>/healthz`.
 - FR-10: The health check MUST NOT need authentication.
 - FR-11: The server MUST return status 502 `storage_error` if the store fails with an error other than "not found".
+- FR-12: The server MUST answer `HEAD` requests for files and for the health check with the headers of `GET` and without a body.
 
 ## Non-functional requirements
 
@@ -50,9 +51,11 @@ The file must not harm the reader or the Fileslop origin.
 
 ## Acceptance criteria
 
-- AC-1: A GET of an uploaded file returns 200 and the same bytes. (e2e: upload and retrieve)
-- AC-2: The GET response has the stored content type and the three security and cache headers. (e2e)
-- AC-3: A GET with an unknown identifier returns 404 `not_found`. (e2e)
-- AC-4: A GET with a known identifier and a wrong filename returns 404 `not_found`. (e2e)
-- AC-5: A GET for an object that is missing in the store returns 404 `not_found`. (e2e: delete from mock)
-- AC-6: `GET <prefix>/healthz` returns 200 `{"status":"ok"}`. (e2e)
+- AC-1: A GET of an uploaded file returns 200 and the same bytes. (e2e: `e2e/server.test.ts`)
+- AC-2: The GET response has the stored content type and the three security and cache headers. (e2e: `e2e/server.test.ts`)
+- AC-3: A GET with an unknown identifier returns 404 `not_found`. (e2e: `e2e/server.test.ts`)
+- AC-4: A GET with a known identifier and a wrong filename returns 404. (e2e: `e2e/server.test.ts`)
+- AC-5: A GET for an object that the test removed from the mock store returns 404. (e2e: `e2e/server.test.ts`)
+- AC-6: `GET <prefix>/healthz` returns 200 `{"status":"ok"}`. (e2e: `e2e/server.test.ts`)
+- AC-7: A HEAD of an uploaded file returns 200, the stored content type, and no body. (e2e: `e2e/server.test.ts`)
+- AC-8: A GET that fails in the object store returns 502 `storage_error`. (not automated)

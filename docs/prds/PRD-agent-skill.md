@@ -33,24 +33,24 @@ Agents do not know Fileslop. They need short and exact instructions.
 - FR-6: The skill MUST show the configuration check `npx -y fileslop config`.
 - FR-7: The skill MUST tell the agent to use `--type` for unknown extensions.
 - FR-8: The skill MUST tell the agent to follow the `Fix:` line after an error.
-- FR-9: The skill MUST explain the exit codes 0, 1, and 2.
+- FR-9: The skill MUST explain the exit codes: 0 is success, 1 is an upload failure, 2 is a usage or configuration error.
 - FR-10: The skill MUST show the pull request procedure:
   1. Upload the artifact.
   2. Read `url` from the JSON output.
   3. Post the URL with `gh pr comment <number> --body "<text with URL>"`.
-- FR-11: The skill MUST tell the agent not to put the token in a command line, a repository file, or a comment.
+- FR-11: The skill MUST tell the agent not to put the token in a command line, a file in the repository, or a comment. The skill MUST tell the agent to use the environment variable `FILESLOP_TOKEN` or the config file.
 - FR-12: The skill MUST state that uploaded files are public and permanent.
 - FR-13: The skill MUST tell the agent not to upload secrets or personal data.
 
 ## Non-functional requirements
 
-- NFR-1: The skill MUST have fewer than 100 lines.
+- NFR-1: The skill MUST have fewer than 80 lines.
 - NFR-2: The skill MUST use Simplified Technical English.
 - NFR-3: The commands in the skill MUST match the client CLI of the same release.
 
 ## Acceptance criteria
 
-- AC-1: `skills/fileslop/SKILL.md` has valid YAML frontmatter with `name: fileslop` and a `description`. (unit or lint check)
-- AC-2: `npx skills add esukram/fileslop` installs the skill. (manual check before release)
-- AC-3: Each command in the skill runs without a usage error against the current client. (e2e or manual check)
-- AC-4: An agent with the skill uploads an HTML file and posts the URL on a test pull request. (manual check)
+- AC-1: `skills/fileslop/SKILL.md` has YAML frontmatter with `name: fileslop` and a `description` of 51 to 1024 characters that contains "pull request". The file has fewer than 80 lines. (e2e: `e2e/skill.test.ts`)
+- AC-2: `npx skills add esukram/fileslop` installs the skill. (not automated: manual check before release)
+- AC-3: Each command in the skill runs without a usage error against the current client. (not automated: manual check before release)
+- AC-4: An agent with the skill uploads an HTML file and posts the URL on a test pull request. (not automated: manual check before release)

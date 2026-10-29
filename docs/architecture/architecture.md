@@ -15,7 +15,7 @@ For product requirements, see [PRDs](../prds/prds.md).
 
 | ADR                   | Title                     | Decision                                                                                   |
 | --------------------- | ------------------------- | ------------------------------------------------------------------------------------------ |
-| [ADR-001](ADR-001.md) | Runtime                   | Use Node.js 24 or later with native type stripping and no runtime dependencies.            |
+| [ADR-001](ADR-001.md) | Runtime                   | Use Node.js 24.2 or later with native type stripping and no runtime dependencies.          |
 | [ADR-002](ADR-002.md) | Repository layout         | Use one pnpm workspace with `server/`, `client/`, `skills/fileslop/`, `e2e/`, and `docs/`. |
 | [ADR-003](ADR-003.md) | Object store adapter      | Use one S3-protocol adapter with our own Signature V4 code for AWS S3 and Hetzner.         |
 | [ADR-004](ADR-004.md) | Identifier and key layout | Use UUID v4 identifiers and object keys with ISO week folders.                             |
@@ -30,6 +30,6 @@ For product requirements, see [PRDs](../prds/prds.md).
 | [ADR-013](ADR-013.md) | Client CLI design         | Publish a compiled `fileslop` package with agent-friendly output and exit codes.           |
 | [ADR-014](ADR-014.md) | Testing                   | Use `node:test` with unit tests and end-to-end tests against a mock S3 server.             |
 | [ADR-015](ADR-015.md) | Tooling                   | Use TypeScript 6.0, ESLint 10, Prettier 3, and pnpm with a release age delay.              |
-| [ADR-016](ADR-016.md) | GitHub and delivery       | Use rulesets, pinned actions, CI checks, and signed releases to npm and GHCR.              |
+| [ADR-016](ADR-016.md) | GitHub and delivery       | Use rulesets, pinned actions, CI checks, and releases with provenance to npm and GHCR.     |
 | [ADR-017](ADR-017.md) | Agent skill               | Supply a short `SKILL.md` for uploads and pull request artifacts.                          |
 | [ADR-018](ADR-018.md) | Documentation language    | Write all text in ASD-STE100 Simplified Technical English.                                 |

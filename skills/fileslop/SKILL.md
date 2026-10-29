@@ -41,11 +41,15 @@ For an image, use `![screenshot]($url)` in the comment body.
 
 ## When the command fails
 
-The CLI writes the problem and a `Fix:` line to stderr. Do the fix.
+Exit code 0 is success. On other exit codes, the CLI writes the problem and a `Fix:` line to stderr. Do the fix.
 
 - Exit code 2: usage or configuration problem. Run `npx -y fileslop config`.
   The CLI needs `FILESLOP_URL` and `FILESLOP_TOKEN`. If they are missing, ask the user. Do not invent values.
 - Exit code 1: the upload failed. Read the HTTP status and the `Fix:` line.
 - npm cannot find `fileslop`: use `npx -y --allow-remote=all https://github.com/esukram/fileslop/releases/latest/download/fileslop.tgz` in place of `npx -y fileslop`.
 
-Never print or log the token.
+## Token
+
+- Do not put the token in command lines, files in the repository, or comments.
+- Use the environment variable `FILESLOP_TOKEN` or the config file `~/.config/fileslop/config.json`.
+- Never print or log the token.

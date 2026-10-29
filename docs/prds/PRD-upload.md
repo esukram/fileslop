@@ -56,24 +56,32 @@ GitHub pull requests cannot attach arbitrary files.
 | `invalid_header`       | 400    | A header is missing or has an invalid value. |
 | `missing_content_type` | 415    | The content type is missing or invalid.      |
 | `payload_too_large`    | 413    | The body is larger than the limit.           |
-| `conflict`             | 409    | The object already exists.                   |
+| `conflict`             | 409    | The identifier or the object already exists. |
 | `storage_error`        | 502    | The object store failed.                     |
+| `internal_error`       | 500    | Another server error occurred.               |
 
 - FR-13: The server MUST NOT write an index line if the store write fails.
+- FR-14: The server MUST return 409 `conflict` if another upload in progress uses the same identifier.
+- FR-15: The server MUST return 500 `internal_error` for other errors. Example: the index write fails after the store write.
+  In this case, the object is in the store, but the index has no entry for it. The URL of the object does not work.
 
 ## Non-functional requirements
 
-- NFR-1: The server MUST NOT use more than the upload limit of memory for one request body.
+- NFR-1: The server MUST NOT read more than the upload limit of body data for one request.
+  The server keeps the received chunks and then joins them into one buffer.
+  Thus the peak memory for one request body is approximately two times the upload limit.
 - NFR-2: If the `Content-Length` header is larger than the limit, the server MUST return 413 before it reads the body.
 - NFR-3: The server MUST NOT write tokens or object store credentials to logs.
 
 ## Acceptance criteria
 
-- AC-1: A valid upload returns 201, the JSON body, and a `Location` header. (e2e: upload success)
-- AC-2: A GET of the returned URL delivers the same bytes. (e2e: upload and retrieve)
-- AC-3: An upload without a token returns 401. (e2e)
-- AC-4: An upload with the filename `../x` returns 400 `invalid_header`. (e2e)
-- AC-5: An upload without `Content-Type` returns 415 `missing_content_type`. (e2e)
-- AC-6: An upload with an empty body returns 201, and GET returns 0 bytes. (e2e)
-- AC-7: An upload larger than the limit returns 413 `payload_too_large`. (e2e with a small limit)
-- AC-8: A store failure returns 502 `storage_error`. (e2e with a failing mock)
+- AC-1: A valid upload returns 201, the JSON body, and a `Location` header. (e2e: `e2e/server.test.ts`)
+- AC-2: A GET of the returned URL delivers the same bytes. (e2e: `e2e/server.test.ts`)
+- AC-3: An upload without a token returns 401. (e2e: `e2e/server.test.ts`)
+- AC-4: An upload with the filename `../etc/passwd` returns 400. An invalid metadata header returns 400 `invalid_header`. (e2e: `e2e/server.test.ts`)
+- AC-5: An upload without `Content-Type` returns 415 `missing_content_type`. (e2e: `e2e/server.test.ts`)
+- AC-6: An upload with an empty body returns 201, and GET returns 0 bytes. (e2e: `e2e/server.test.ts`)
+- AC-7: An upload larger than the limit returns 413 `payload_too_large`. A chunked upload without `Content-Length` that is larger than the limit also returns 413. (e2e with a small limit: `e2e/server.test.ts`)
+- AC-8: A store failure returns 502 `storage_error`. (e2e with a failing mock: `e2e/server.test.ts`)
+- AC-9: Two concurrent uploads that get the same identifier return 201 and 409. The store receives one PUT only. (unit: `server/test/app.test.ts`)
+- AC-10: A failed index write after a successful store write returns 500 `internal_error`. (not automated)
