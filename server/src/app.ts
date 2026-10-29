@@ -28,7 +28,7 @@ const METADATA_HEADERS = {
 /** Attempts to get an unused file id. More collisions mean that the id generator is broken. */
 const ID_ATTEMPTS = 3;
 
-/** UUIDs from v0.1.0 and Bech32m file ids (ADR-019). */
+/** UUIDs from versions 0.1.x and Bech32m file ids (ADR-019). */
 const isId = (id: string): boolean => UUID_RE.test(id) || isFileId(id);
 
 class HttpError extends Error {
