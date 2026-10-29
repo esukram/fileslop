@@ -60,7 +60,8 @@ GitHub pull requests cannot attach arbitrary files.
 | `storage_error`        | 502    | The object store failed.                     |
 | `internal_error`       | 500    | Another server error occurred.               |
 
-The server does the checks in this order. The first failed check stops the upload:
+This diagram shows the current order of the checks. The first failed check stops the upload.
+The order between invalid input headers is not a contract. Authentication is always the first check.
 
 ```mermaid
 flowchart TD
@@ -88,8 +89,13 @@ sequenceDiagram
   S->>O: PUT {key} with If-None-Match: *
   alt Object created
     O-->>S: 2xx
-    S->>I: Append the record, fsync the file and the folder
-    S-->>C: 201 with Location and JSON body
+    S->>I: Append the record
+    S->>I: Flush the file and the folder with fsync
+    alt Index write succeeded
+      S-->>C: 201 with Location and JSON body
+    else Index write failed
+      S-->>C: 500 internal_error, the object stays in the store
+    end
   else Key exists
     O-->>S: 412 or 409
     S-->>C: 409 conflict

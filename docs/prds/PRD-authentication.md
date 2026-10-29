@@ -38,7 +38,7 @@ A leak of server files must not leak tokens.
 - FR-10: `issue-key` MUST append the hash line to the key file and flush it to disk with `fsync`. If the last line has no newline, `issue-key` MUST add a newline first.
 - FR-11: `issue-key` MUST print the token one time on stdout.
 - FR-12: The running server MUST reload the key file when its modification time or its size changes.
-- FR-13: A missing or incorrect token MUST give status 401, the error code `unauthorized`, and the header `WWW-Authenticate: Bearer`.
+- FR-13: A missing or incorrect token MUST give status 401, the error code `unauthorized`, and a `WWW-Authenticate` header with the `Bearer` scheme. The server sends `Bearer realm="fileslop"`.
 - FR-14: The server MUST store the authenticated username as object metadata `fs-uploader`.
 - FR-15: CI MUST fail if a committed file contains a string with the prefix `es.fs1.key.` and a token body.
 
