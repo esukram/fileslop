@@ -40,6 +40,18 @@ Errors in the configuration must be visible at start, not at the first upload.
 
 ## Deployment procedure
 
+```mermaid
+flowchart LR
+  users([Clients and browsers]) -- HTTPS --> proxy["TLS reverse proxy<br/>FILESLOP_PUBLIC_URL"]
+  proxy -- "HTTP, port 8080" --> app
+  subgraph host [Container host]
+    env[".env file"] -. "docker run --env-file" .-> app["fileslop-server container<br/>user is not root"]
+    app --- vol[("Volume fileslop-data<br/>at /data")]
+    op([Operator]) -. "docker run … issue-key" .-> vol
+  end
+  app -- HTTPS --> bucket[("S3 bucket<br/>AWS or Hetzner")]
+```
+
 1. Create a bucket in AWS S3 or Hetzner Object Storage.
 2. Create an access key with read and write access to the bucket only.
 3. Copy `server/.env.sample` to `.env` on the host.

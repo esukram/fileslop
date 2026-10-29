@@ -60,6 +60,45 @@ GitHub pull requests cannot attach arbitrary files.
 | `storage_error`        | 502    | The object store failed.                     |
 | `internal_error`       | 500    | Another server error occurred.               |
 
+The server does the checks in this order. The first failed check stops the upload:
+
+```mermaid
+flowchart TD
+  req(["POST {prefix}/"]) --> auth{Valid Bearer token?}
+  auth -- No --> e401[401 unauthorized]
+  auth -- Yes --> ct{Valid Content-Type?}
+  ct -- No --> e415[415 missing_content_type]
+  ct -- Yes --> hdr{"Valid X-FS-* headers?"}
+  hdr -- No --> e400[400 invalid_header]
+  hdr -- Yes --> len{"Content-Length or body<br/>larger than the limit?"}
+  len -- Yes --> e413[413 payload_too_large]
+  len -- No --> id{"New id in the index<br/>or in progress?"}
+  id -- Yes --> e409[409 conflict]
+  id -- No --> store[Store write]
+```
+
+The store write:
+
+```mermaid
+sequenceDiagram
+  participant C as Client
+  participant S as Server
+  participant O as Object store
+  participant I as index.jsonl
+  S->>O: PUT {key} with If-None-Match: *
+  alt Object created
+    O-->>S: 2xx
+    S->>I: Append the record, fsync the file and the folder
+    S-->>C: 201 with Location and JSON body
+  else Key exists
+    O-->>S: 412 or 409
+    S-->>C: 409 conflict
+  else Store failure
+    O-->>S: Other error
+    S-->>C: 502 storage_error
+  end
+```
+
 - FR-13: The server MUST NOT write an index line if the store write fails.
 - FR-14: The server MUST return 409 `conflict` if another upload in progress uses the same identifier.
 - FR-15: The server MUST return 500 `internal_error` for other errors. Example: the index write fails after the store write.

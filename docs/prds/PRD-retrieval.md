@@ -38,6 +38,19 @@ The file must not harm the reader or the Fileslop origin.
   - The identifier is not in the index.
   - The filename is not the stored filename.
   - The object is not in the store.
+
+```mermaid
+flowchart TD
+  req(["GET {prefix}/{id}/{filename}"]) --> idx{Id in the index?}
+  idx -- No --> nf[404 not_found]
+  idx -- Yes --> fn{Stored filename?}
+  fn -- No --> nf
+  fn -- Yes --> get[One GET to the object store]
+  get -- Not found --> nf
+  get -- Other error --> e502[502 storage_error]
+  get -- Found --> ok["200 with the stored Content-Type<br/>and the security and cache headers"]
+```
+
 - FR-9: The server MUST return status 200 with `{"status":"ok"}` for `GET <prefix>/healthz`.
 - FR-10: The health check MUST NOT need authentication.
 - FR-11: The server MUST return status 502 `storage_error` if the store fails with an error other than "not found".

@@ -38,6 +38,24 @@ Agents do not know Fileslop. They need short and exact instructions.
   1. Upload the artifact.
   2. Read `url` from the JSON output.
   3. Post the URL with `gh pr comment <number> --body "<text with URL>"`.
+
+```mermaid
+sequenceDiagram
+  actor A as AI agent
+  participant CLI as fileslop CLI
+  participant S as Fileslop server
+  participant GH as GitHub
+  actor R as Reviewer
+  A->>CLI: npx -y fileslop upload plan.html
+  CLI->>S: POST with the token from FILESLOP_TOKEN
+  S-->>CLI: 201 with JSON body
+  CLI-->>A: JSON with url on stdout, exit code 0
+  A->>GH: gh pr comment {number} --body "… {url}"
+  R->>GH: Open the pull request
+  R->>S: Open the URL
+  S-->>R: The file, HTML in a sandbox
+```
+
 - FR-11: The skill MUST tell the agent not to put the token in a command line, a file in the repository, or a comment. The skill MUST tell the agent to use the environment variable `FILESLOP_TOKEN` or the config file.
 - FR-12: The skill MUST state that uploaded files are public and permanent.
 - FR-13: The skill MUST tell the agent not to upload secrets or personal data.
