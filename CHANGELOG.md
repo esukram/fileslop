@@ -5,9 +5,25 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). The
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-10-29
+
+The first release that the release workflow publishes to npm with provenance. It fixes two CodeQL findings.
+
+### Security
+
+- Client: the CLI checks and reads the upload file through one file descriptor, so that the check and the read see the same file.
+- Server: the server checks and reads `keys.txt` through one file handle.
+- Server: the request log replaces control and non-ASCII characters in the path, so that a request cannot forge log lines.
+
 ### Added
 
 - Documentation: a start page `docs/index.md` that links to all documents.
+- Documentation: Mermaid diagrams in the architecture decisions and PRDs.
+- Documentation: the one-time npm publishing setup in the operations guide.
+
+### Changed
+
+- Client: the README links to the documentation on GitHub, so that the links also work on npmjs.com.
 
 ## [0.1.0] - 2026-10-29
 
@@ -28,5 +44,6 @@ The first release. People and AI agents can now share files with one command. Gi
 - Documentation: product requirements, architecture decisions and an operations guide.
 - Repository: CI on Node.js 24 and 26, and a release workflow for the GitHub release, the container image and npm.
 
-[Unreleased]: https://github.com/esukram/fileslop/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/esukram/fileslop/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/esukram/fileslop/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/esukram/fileslop/releases/tag/v0.1.0
