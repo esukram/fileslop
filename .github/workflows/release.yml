@@ -31,7 +31,7 @@ jobs:
         id: notes
         run: |
           version="${GITHUB_REF_NAME#v}"
-          awk -v v="$version" '$0 ~ "^## \\[" v "\\]" {f=1; next} /^## \[/ {f=0} f' CHANGELOG.md > notes.md
+          awk -v v="$version" '$0 ~ "^## \\[" v "\\]" {f=1; next} /^(## )?\[/ {f=0} f' CHANGELOG.md > notes.md
           test -s notes.md || { echo "::error::CHANGELOG.md has no section for $version"; exit 1; }
           { echo "notes<<EOF_RELEASE_NOTES"; cat notes.md; echo "EOF_RELEASE_NOTES"; } >> "$GITHUB_OUTPUT"
 
