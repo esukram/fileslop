@@ -12,7 +12,7 @@ The READMEs describe what each part is. This document describes how to use it.
 
    ```sh
    docker run -d --name fileslop -p 8080:8080 --env-file .env \
-     -v fileslop-data:/data ghcr.io/esukram/fileslop-server:0.1.0
+     -v fileslop-data:/data ghcr.io/esukram/fileslop-server:0.1.1
    ```
 
 5. Put a TLS reverse proxy in front of port 8080. The public URL must be the value of `FILESLOP_PUBLIC_URL`.
@@ -30,7 +30,7 @@ Use the setting `builtin:rum.processgroup` with `enable: false`. If RUM is on, t
 To issue a token, do this command. The command prints the token one time:
 
 ```sh
-docker run --rm -v fileslop-data:/data ghcr.io/esukram/fileslop-server:0.1.0 issue-key alice
+docker run --rm -v fileslop-data:/data ghcr.io/esukram/fileslop-server:0.1.1 issue-key alice
 ```
 
 Without a container, do `node src/main.ts issue-key alice` in the `server` directory.
