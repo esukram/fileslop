@@ -229,7 +229,9 @@ export function createApp(deps: AppDeps): Server {
     const started = performance.now();
     res.on("finish", () => {
       const ms = Math.round(performance.now() - started);
-      console.log(`${req.method ?? "-"} ${req.url ?? "-"} ${res.statusCode} ${ms}ms`);
+      // Log the path only: a query string can contain secrets.
+      const path = (req.url ?? "-").split("?")[0] ?? "-";
+      console.log(`${req.method ?? "-"} ${path} ${res.statusCode} ${ms}ms`);
     });
     route(req, res).catch((err: unknown) => {
       if (res.headersSent) {

@@ -67,6 +67,9 @@ export function loadConfig(env: NodeJS.ProcessEnv): Config {
   if (rawEndpoint) {
     try {
       endpoint = new URL(rawEndpoint);
+      if (!["http:", "https:"].includes(endpoint.protocol)) {
+        problems.push("FILESLOP_S3_ENDPOINT must be an http(s) URL");
+      }
     } catch {
       problems.push(`FILESLOP_S3_ENDPOINT is not a valid URL: ${rawEndpoint}`);
     }

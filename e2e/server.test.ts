@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { after, before, describe, test } from "node:test";
 import { issueKey, PUBLIC_URL, run, SERVER, serverEnv, startServer, tempDir } from "./helpers.ts";
@@ -189,6 +189,22 @@ describe("server", () => {
     }
   });
 
+  test("returns 404 when the object is gone from the store", async () => {
+    const created = (await (await post(valid())).json()) as { url: string; id: string };
+    for (const key of mock.objects.keys()) if (key.includes(created.id)) mock.objects.delete(key);
+    assert.equal((await fetch(server.local(created.url))).status, 404);
+  });
+
+  test("rejects a key removed from the key file while the server runs", async () => {
+    const carolToken = await issueKey(dataDir, "carol");
+    assert.equal((await post(valid({ authorization: `Bearer ${carolToken}` }))).status, 201);
+    const file = join(dataDir, "keys.txt");
+    const lines = (await readFile(file, "utf8")).split("\n");
+    await writeFile(file, lines.filter((line) => !line.startsWith("carol:")).join("\n"));
+    assert.equal((await post(valid({ authorization: `Bearer ${carolToken}` }))).status, 401);
+    assert.equal((await post(valid())).status, 201);
+  });
+
   test("accepts a key issued while the server runs", async () => {
     const bobToken = await issueKey(dataDir, "bob");
     const res = await post(valid({ authorization: `Bearer ${bobToken}` }));
@@ -204,7 +220,9 @@ describe("server", () => {
     assert.equal(get.headers.get("allow"), "POST");
   });
 
-  test("never logs tokens", () => {
+  test("never logs tokens", async () => {
+    await fetch(`${server.url}?token=${token}`, { method: "POST" });
+    await fetch(`${server.url}healthz?token=${token}`);
     assert.ok(!server.logs().includes(token));
     assert.ok(!server.logs().includes("es.fs1.key."));
   });
@@ -252,8 +270,12 @@ describe("server lifecycle", () => {
     const dotenv = Object.entries(env)
       .map(([name, value]) => `${name}=${value}`)
       .join("\n");
-    await writeFile(join(dataDir, ".env"), `# from .env\n${dotenv}\n`);
-    const server = await startServer({}, dataDir);
+    await writeFile(
+      join(dataDir, ".env"),
+      `# from .env\n${dotenv}\nFILESLOP_BASE_DIR=from-dotenv\n`,
+    );
+    // Real environment variables win over the .env file.
+    const server = await startServer({ FILESLOP_BASE_DIR: "from-env" }, dataDir);
     try {
       const res = await fetch(server.url, {
         method: "POST",
@@ -266,6 +288,7 @@ describe("server lifecycle", () => {
       });
       assert.equal(res.status, 201);
       assert.match(mock.requests.at(-1)?.headers.authorization ?? "", /\/eu-central-1\/s3\//);
+      assert.match(mock.requests.at(-1)?.key ?? "", /^from-env\//);
     } finally {
       await server.stop();
       await mock.close();
@@ -276,7 +299,12 @@ describe("server lifecycle", () => {
     const dir = await tempDir();
     const result = await run(
       [SERVER, "serve"],
-      { FILESLOP_BACKEND: "azure", FILESLOP_PORT: "abc", FILESLOP_DATA_DIR: dir },
+      {
+        FILESLOP_BACKEND: "azure",
+        FILESLOP_PORT: "abc",
+        FILESLOP_S3_ENDPOINT: "ftp://store.example/",
+        FILESLOP_DATA_DIR: dir,
+      },
       dir,
     );
     assert.equal(result.code, 2);
@@ -285,6 +313,7 @@ describe("server lifecycle", () => {
       "FILESLOP_BACKEND",
       "FILESLOP_PORT",
       "FILESLOP_S3_BUCKET",
+      "FILESLOP_S3_ENDPOINT must be an http",
     ]) {
       assert.match(result.stderr, new RegExp(name));
     }
