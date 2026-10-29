@@ -32,7 +32,7 @@ GitHub pull requests cannot attach arbitrary files.
 - FR-4: The server MUST accept the optional headers `X-FS-Username`, `X-FS-Repository`, and `X-FS-Repository-Provider` with the pattern `^[A-Za-z0-9][A-Za-z0-9._/-]{0,127}$`.
 - FR-5: The server MUST reject an invalid header value. It MUST NOT rewrite the value.
 - FR-6: The server MUST require a syntactically valid `Content-Type` header. It MUST NOT infer or sniff the type.
-- FR-7: The server MUST reject an empty body.
+- FR-7: The server MUST accept an empty body and store a file with 0 bytes.
 - FR-8: The server MUST reject a body larger than `FILESLOP_MAX_UPLOAD_BYTES`.
 - FR-9: The server MUST create a new UUID v4 identifier for each upload.
 - FR-10: The server MUST store the file as described in [PRD-storage-backends](PRD-storage-backends.md).
@@ -54,7 +54,6 @@ GitHub pull requests cannot attach arbitrary files.
 | ---------------------- | ------ | -------------------------------------------- |
 | `unauthorized`         | 401    | The token is missing or incorrect.           |
 | `invalid_header`       | 400    | A header is missing or has an invalid value. |
-| `empty_body`           | 400    | The body is empty.                           |
 | `missing_content_type` | 415    | The content type is missing or invalid.      |
 | `payload_too_large`    | 413    | The body is larger than the limit.           |
 | `conflict`             | 409    | The object already exists.                   |
@@ -75,6 +74,6 @@ GitHub pull requests cannot attach arbitrary files.
 - AC-3: An upload without a token returns 401. (e2e)
 - AC-4: An upload with the filename `../x` returns 400 `invalid_header`. (e2e)
 - AC-5: An upload without `Content-Type` returns 415 `missing_content_type`. (e2e)
-- AC-6: An upload with an empty body returns 400 `empty_body`. (e2e)
+- AC-6: An upload with an empty body returns 201, and GET returns 0 bytes. (e2e)
 - AC-7: An upload larger than the limit returns 413 `payload_too_large`. (e2e with a small limit)
 - AC-8: A store failure returns 502 `storage_error`. (e2e with a failing mock)

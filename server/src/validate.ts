@@ -6,8 +6,9 @@ export const ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
 
 // RFC 9110 media type: type "/" subtype *( OWS ";" OWS parameter ).
 const TOKEN = "[!#$%&'*+.^_`|~0-9A-Za-z-]+";
+const QUOTED = '"(?:[\\t \\x21\\x23-\\x5b\\x5d-\\x7e]|\\\\[\\t \\x21-\\x7e])*"';
 const MEDIA_TYPE_RE = new RegExp(
-  `^${TOKEN}/${TOKEN}([ \\t]*;[ \\t]*${TOKEN}=(${TOKEN}|"[^"\\\\]*"))*$`,
+  `^${TOKEN}/${TOKEN}([ \\t]*;[ \\t]*${TOKEN}=(${TOKEN}|${QUOTED}))*$`,
 );
 
 export const isMediaType = (value: string): boolean =>

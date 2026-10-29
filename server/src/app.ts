@@ -80,6 +80,8 @@ export function createApp(deps: AppDeps): Server {
   const prefix = deps.publicUrl.pathname; // Ends with "/".
   const now = deps.now ?? (() => new Date());
   const newId = deps.newId ?? randomUUID;
+  /** Ids of uploads in progress, so that two uploads cannot get the same id. */
+  const pending = new Set<string>();
   const tooLarge = new HttpError(
     413,
     "payload_too_large",
@@ -136,14 +138,27 @@ export function createApp(deps: AppDeps): Server {
       res.setHeader("connection", "close");
       throw tooLarge;
     }
-    if (body.length === 0) {
-      throw new HttpError(400, "empty_body", "Send the file content in the request body.");
-    }
-
     const id = newId();
-    if (deps.index.get(id)) {
+    if (deps.index.get(id) || pending.has(id)) {
       throw new HttpError(409, "conflict", `The file id ${id} exists already. Upload again.`);
     }
+    pending.add(id);
+    try {
+      await store(res, id, filename, contentType, uploader, metadata, body);
+    } finally {
+      pending.delete(id);
+    }
+  }
+
+  async function store(
+    res: ServerResponse,
+    id: string,
+    filename: string,
+    contentType: string,
+    uploader: string,
+    metadata: Record<string, string>,
+    body: Buffer,
+  ): Promise<void> {
     const key = [deps.baseDir, isoWeek(now()), id, filename].filter(Boolean).join("/");
     if ((await deps.store.put(key, body, contentType, metadata)) === "exists") {
       throw new HttpError(409, "conflict", `The object ${key} exists already. Upload again.`);

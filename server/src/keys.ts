@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto";
-import { appendFile, mkdir, readFile, stat } from "node:fs/promises";
+import { mkdir, readFile, stat } from "node:fs/promises";
 import { dirname } from "node:path";
+import { appendLine } from "./append-line.ts";
 import { sha256Hex } from "./sigv4.ts";
 
 /** Fixed prefix so that secret scanners can find leaked tokens. */
@@ -79,6 +80,6 @@ export async function issueKey(file: string, username: string): Promise<string> 
   }
   const token = generateToken();
   await mkdir(dirname(file), { recursive: true });
-  await appendFile(file, `${username}:${sha256Hex(token)}\n`, { mode: 0o600 });
+  await appendLine(file, `${username}:${sha256Hex(token)}`, 0o600);
   return token;
 }

@@ -188,18 +188,16 @@ async function upload(argv: string[]): Promise<void> {
   }
   const { url, token } = requireConfig();
 
-  let size: number;
+  let body: Buffer;
   try {
-    const stat = statSync(path);
-    if (!stat.isFile()) throw new Error("not a file");
-    size = stat.size;
+    if (!statSync(path).isFile()) throw new Error("not a file");
+    body = readFileSync(path);
   } catch {
     throw new UsageError(
       `cannot read the file ${path}`,
       "Check the path. Upload one regular file.",
     );
   }
-  if (size === 0) throw new UsageError(`the file ${path} is empty`, "Upload a file with content.");
 
   const name = values.name ?? safeName(basename(path));
   const type = values.type ?? mediaTypeFor(name);
@@ -228,9 +226,12 @@ async function upload(argv: string[]): Promise<void> {
     if (value !== undefined) headers[header] = value;
   }
 
-  let res: Response;
+  let status: number;
+  let text: string;
   try {
-    res = await fetch(url, { method: "POST", headers, body: readFileSync(path) });
+    const res = await fetch(url, { method: "POST", headers, body });
+    status = res.status;
+    text = await res.text();
   } catch (err) {
     const cause =
       err instanceof Error && err.cause instanceof Error ? err.cause.message : String(err);
@@ -239,21 +240,33 @@ async function upload(argv: string[]): Promise<void> {
       "Check FILESLOP_URL and your network connection.",
     );
   }
-  const text = await res.text();
-  if (res.status !== 201) {
-    let detail = text.trim();
-    try {
-      const body = JSON.parse(text) as { error?: string; message?: string };
-      detail = `${body.error ?? "error"}: ${body.message ?? ""}`;
-    } catch {
-      // Not JSON: show the raw text.
-    }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    // Not JSON, for example an error page of a proxy.
+  }
+  const reply = (typeof parsed === "object" && parsed !== null ? parsed : {}) as Record<
+    string,
+    unknown
+  >;
+  if (status !== 201) {
+    const detail =
+      typeof reply["error"] === "string"
+        ? `${reply["error"]}: ${typeof reply["message"] === "string" ? reply["message"] : ""}`
+        : text.trim().slice(0, 200);
     throw new UploadError(
-      `upload failed: HTTP ${res.status} ${detail}`,
-      FIXES[res.status] ?? "The server or its object store failed. Try again later.",
+      `upload failed: HTTP ${status} ${detail}`,
+      FIXES[status] ?? "The server or its object store failed. Try again later.",
     );
   }
-  console.log(JSON.stringify(JSON.parse(text)));
+  if (typeof reply["url"] !== "string") {
+    throw new UploadError(
+      `the server answered 201 without a "url": ${text.trim().slice(0, 200)}`,
+      "Check FILESLOP_URL. It must point to a Fileslop server.",
+    );
+  }
+  console.log(JSON.stringify(reply));
 }
 
 function showConfig(): void {

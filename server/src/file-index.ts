@@ -1,5 +1,6 @@
-import { appendFile, mkdir, readFile } from "node:fs/promises";
+import { mkdir, readFile } from "node:fs/promises";
 import { dirname } from "node:path";
+import { appendLine } from "./append-line.ts";
 
 export interface IndexEntry {
   id: string;
@@ -32,8 +33,6 @@ export class FileIndex {
     } catch (err) {
       if ((err as NodeJS.ErrnoException).code !== "ENOENT") throw err;
     }
-    // A crash can leave a partial last line. Close it, so that the next entry starts on a new line.
-    if (text !== "" && !text.endsWith("\n")) await appendFile(file, "\n");
     text.split("\n").forEach((line, i) => {
       if (line.trim() === "") return;
       try {
@@ -55,7 +54,7 @@ export class FileIndex {
   }
 
   async add(entry: IndexEntry): Promise<void> {
-    await appendFile(this.#file, JSON.stringify(entry) + "\n");
+    await appendLine(this.#file, JSON.stringify(entry));
     this.#entries.set(entry.id, entry);
   }
 }

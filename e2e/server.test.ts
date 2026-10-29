@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { writeFile } from "node:fs/promises";
+import { join } from "node:path";
 import { after, before, describe, test } from "node:test";
 import { issueKey, PUBLIC_URL, run, SERVER, serverEnv, startServer, tempDir } from "./helpers.ts";
 import type { RunningServer } from "./helpers.ts";
@@ -120,11 +122,45 @@ describe("server", () => {
     assert.equal(((await badMeta.json()) as { error: string }).error, "invalid_header");
   });
 
-  test("rejects empty and too large bodies", async () => {
-    assert.equal((await post(valid(), "")).status, 400);
+  test("accepts empty files", async () => {
+    const res = await post(
+      valid({ "x-fs-filename": "empty.txt", "content-type": "text/plain" }),
+      "",
+    );
+    assert.equal(res.status, 201);
+    const { url, size } = (await res.json()) as { url: string; size: number };
+    assert.equal(size, 0);
+    const file = await fetch(server.local(url));
+    assert.equal(file.status, 200);
+    assert.equal(await file.text(), "");
+  });
+
+  test("rejects too large bodies, with and without Content-Length", async () => {
     const big = await post(valid(), "x".repeat(2048));
     assert.equal(big.status, 413);
     assert.equal(((await big.json()) as { error: string }).error, "payload_too_large");
+
+    const chunks = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode("x".repeat(2048)));
+        controller.close();
+      },
+    });
+    const chunked = await fetch(server.url, {
+      method: "POST",
+      headers: valid(),
+      body: chunks,
+      duplex: "half",
+    });
+    assert.equal(chunked.status, 413);
+  });
+
+  test("answers HEAD requests without a body", async () => {
+    const created = (await (await post(valid())).json()) as { url: string };
+    const res = await fetch(server.local(created.url), { method: "HEAD" });
+    assert.equal(res.status, 200);
+    assert.equal(res.headers.get("content-type"), "text/html; charset=utf-8");
+    assert.equal(await res.text(), "");
   });
 
   test("never overwrites an existing object", async () => {
@@ -198,6 +234,38 @@ describe("server lifecycle", () => {
       const again = await fetch(server.local(url));
       assert.equal(again.status, 200);
       assert.equal(await again.text(), "persist me");
+    } finally {
+      await server.stop();
+      await mock.close();
+    }
+  });
+
+  test("starts from a .env file with the aws_s3 backend", async () => {
+    const mock = await startMockS3();
+    const dataDir = await tempDir();
+    const token = await issueKey(dataDir, "alice");
+    const env = serverEnv(mock, dataDir, {
+      FILESLOP_BACKEND: "aws_s3",
+      FILESLOP_S3_REGION: "eu-central-1",
+    });
+    delete (env as Record<string, string | undefined>)["FILESLOP_HETZNER_LOCATION"];
+    const dotenv = Object.entries(env)
+      .map(([name, value]) => `${name}=${value}`)
+      .join("\n");
+    await writeFile(join(dataDir, ".env"), `# from .env\n${dotenv}\n`);
+    const server = await startServer({}, dataDir);
+    try {
+      const res = await fetch(server.url, {
+        method: "POST",
+        headers: {
+          authorization: `Bearer ${token}`,
+          "content-type": "text/plain",
+          "x-fs-filename": "aws.txt",
+        },
+        body: "aws",
+      });
+      assert.equal(res.status, 201);
+      assert.match(mock.requests.at(-1)?.headers.authorization ?? "", /\/eu-central-1\/s3\//);
     } finally {
       await server.stop();
       await mock.close();

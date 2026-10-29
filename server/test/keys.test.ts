@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readFile } from "node:fs/promises";
+import { mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
@@ -21,6 +21,16 @@ test("issueKey stores only the hash and the store accepts the token", async () =
   assert.equal(await keys.authenticate(token), "alice");
   assert.equal(await keys.authenticate(token.slice(0, -1) + "x"), undefined);
   assert.equal(await keys.authenticate(token.slice(TOKEN_PREFIX.length)), undefined);
+});
+
+test("issueKey keeps the last record of a file without a final newline", async () => {
+  const file = join(await mkdtemp(join(tmpdir(), "fileslop-")), "keys.txt");
+  const oldToken = `${TOKEN_PREFIX}${"o".repeat(43)}`;
+  await writeFile(file, `old:${sha256Hex(oldToken)}`);
+  const newToken = await issueKey(file, "new");
+  const keys = new KeyStore(file);
+  assert.equal(await keys.authenticate(oldToken), "old");
+  assert.equal(await keys.authenticate(newToken), "new");
 });
 
 test("issueKey rejects invalid usernames", async () => {

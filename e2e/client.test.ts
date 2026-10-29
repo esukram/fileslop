@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { mkdir, writeFile } from "node:fs/promises";
+import { createServer } from "node:http";
+import type { AddressInfo } from "node:net";
 import { join } from "node:path";
 import { after, before, describe, test } from "node:test";
 import {
@@ -71,6 +73,12 @@ describe("client cli", () => {
     });
   });
 
+  test("uploads an empty file", async () => {
+    const result = await cli(["upload", "empty.txt"]);
+    assert.equal(result.code, 0, result.stderr);
+    assert.equal((JSON.parse(result.stdout) as { size: number }).size, 0);
+  });
+
   test("uses flags over git metadata, and --no-git", async () => {
     const flags = await cli(["upload", "plan.html", "-n", "pr-1.html", "--repository", "other"]);
     assert.equal(flags.code, 0, flags.stderr);
@@ -122,7 +130,6 @@ describe("client cli", () => {
     assert.match(wrongPrefix.stderr, /does not start with es\.fs1\.key\./);
 
     assert.equal((await cli(["upload", "missing.txt"])).code, 2);
-    assert.equal((await cli(["upload", "empty.txt"])).code, 2);
     assert.equal((await cli(["upload"])).code, 2);
     assert.equal((await cli(["upload", "plan.html", "--bogus"])).code, 2);
     assert.equal((await cli(["bogus"])).code, 2);
@@ -134,6 +141,23 @@ describe("client cli", () => {
     });
     assert.equal(result.code, 1);
     assert.match(result.stderr, /cannot reach[\s\S]*Fix: Check FILESLOP_URL/);
+  });
+
+  test("reports a server that is not a Fileslop server", async () => {
+    const other = createServer((_req, res) => {
+      res.writeHead(201, { "content-type": "text/html" }).end("<html>ok</html>");
+    });
+    await new Promise<void>((resolve) => other.listen(0, "127.0.0.1", resolve));
+    const port = (other.address() as AddressInfo).port;
+    try {
+      const result = await cli(["upload", "plan.html"], {
+        FILESLOP_URL: `http://127.0.0.1:${port}/`,
+      });
+      assert.equal(result.code, 1);
+      assert.match(result.stderr, /201 without a "url"[\s\S]*Fix: Check FILESLOP_URL/);
+    } finally {
+      other.close();
+    }
   });
 
   test("reads the config file and shows it with a masked token", async () => {

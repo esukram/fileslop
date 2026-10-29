@@ -10,10 +10,25 @@ test("isoWeek uses the ISO 8601 week-year", () => {
 });
 
 test("isMediaType accepts RFC 9110 media types only", () => {
-  for (const ok of ["text/html", "image/svg+xml", "text/plain; charset=utf-8", 'a/b;x="y z"']) {
+  for (const ok of [
+    "text/html",
+    "image/svg+xml",
+    "text/plain; charset=utf-8",
+    'a/b;x="y z"',
+    'a/b; t="a\\"b"',
+  ]) {
     assert.ok(isMediaType(ok), ok);
   }
-  for (const bad of ["", "text", "text/", "/html", "text/html;", "text/html\r\nx: y", "a b/c"]) {
+  for (const bad of [
+    "",
+    "text",
+    "text/",
+    "/html",
+    "text/html;",
+    "text/html\r\nx: y",
+    "a b/c",
+    'a/b; t="a"b"',
+  ]) {
     assert.ok(!isMediaType(bad), bad);
   }
 });
