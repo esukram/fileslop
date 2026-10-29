@@ -11,8 +11,32 @@ jobs:
   verify:
     uses: ./.github/workflows/ci.yml
 
+  # All publishers depend on this job: tag, package versions and release notes must agree.
+  preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      notes: ${{ steps.notes.outputs.notes }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check that the tag matches the package versions
+        run: |
+          for pkg in client server; do
+            version="v$(node -p "require('./$pkg/package.json').version")"
+            test "$version" = "$GITHUB_REF_NAME" || { echo "::error::$pkg is $version, tag is $GITHUB_REF_NAME"; exit 1; }
+          done
+      - name: Extract the release notes from CHANGELOG.md
+        id: notes
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          awk -v v="$version" '$0 ~ "^## \\[" v "\\]" {f=1; next} /^## \[/ {f=0} f' CHANGELOG.md > notes.md
+          test -s notes.md || { echo "::error::CHANGELOG.md has no section for $version"; exit 1; }
+          { echo "notes<<EOF_RELEASE_NOTES"; cat notes.md; echo "EOF_RELEASE_NOTES"; } >> "$GITHUB_OUTPUT"
+
   github-release:
-    needs: verify
+    needs: [verify, preflight]
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
@@ -29,12 +53,6 @@ jobs:
           node-version: 26
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Check that the tag matches the package versions
-        run: |
-          for pkg in client server; do
-            version="v$(node -p "require('./$pkg/package.json').version")"
-            test "$version" = "$GITHUB_REF_NAME" || { echo "::error::$pkg is $version, tag is $GITHUB_REF_NAME"; exit 1; }
-          done
       - name: Pack the CLI
         run: |
           pnpm --filter fileslop pack --out "$PWD/fileslop-${GITHUB_REF_NAME#v}.tgz"
@@ -45,15 +63,14 @@ jobs:
       - name: Create the GitHub release with notes from CHANGELOG.md
         env:
           GH_TOKEN: ${{ github.token }}
+          NOTES: ${{ needs.preflight.outputs.notes }}
         run: |
           version="${GITHUB_REF_NAME#v}"
-          awk -v v="$version" '$0 ~ "^## \\[" v "\\]" {f=1; next} /^## \[/ {f=0} f' CHANGELOG.md > notes.md
-          test -s notes.md || { echo "::error::CHANGELOG.md has no section for $version"; exit 1; }
           gh release create "$GITHUB_REF_NAME" "fileslop-$version.tgz" fileslop.tgz \
-            --title "$GITHUB_REF_NAME" --notes-file notes.md --verify-tag
+            --title "$GITHUB_REF_NAME" --notes "$NOTES" --verify-tag
 
   container:
-    needs: verify
+    needs: [verify, preflight]
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
@@ -69,10 +86,13 @@ jobs:
           IMAGE: ghcr.io/${{ github.repository_owner }}/fileslop-server
         run: |
           echo "$GH_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
-          docker buildx create --use --driver docker-container
+          # Pinned BuildKit and SBOM scanner images: the build does not change without a commit.
+          docker buildx create --use --driver docker-container \
+            --driver-opt image=moby/buildkit:buildx-stable-1@sha256:cec9f139f45e93c5c69c60f8b07cfad9f43f4ef6b6a6cd917527fea5ff2e3dea
           docker buildx build server --push \
             --platform linux/amd64,linux/arm64 \
-            --provenance=mode=max --sbom=true \
+            --provenance=mode=max \
+            --attest type=sbom,generator=docker/buildkit-syft-scanner:stable-1@sha256:873a7458c3c8ac8e32c7b796c10e1600b07b963d2aa000a72a2d97aaaa2d6315 \
             --label "org.opencontainers.image.source=https://github.com/$GITHUB_REPOSITORY" \
             --label "org.opencontainers.image.version=${GITHUB_REF_NAME#v}" \
             --label "org.opencontainers.image.licenses=MIT" \
@@ -83,7 +103,7 @@ jobs:
   npm:
     # Enable with the repository variable NPM_PUBLISH=true after you set up npm trusted publishing.
     if: vars.NPM_PUBLISH == 'true'
-    needs: verify
+    needs: [verify, preflight]
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     environment: npm

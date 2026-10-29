@@ -36,6 +36,7 @@ $ npx -y fileslop upload plan.html
 ## More information
 
 - [Server](server/README.md), [client](client/README.md) and [skill](skills/README.md)
+- [Operations](docs/operations.md): run the server, issue tokens, install the client and the skill
 - [Product requirements](docs/prds/prds.md) and [architecture decisions](docs/architecture/architecture.md)
 - [Changelog](CHANGELOG.md)
 

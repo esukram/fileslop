@@ -14,38 +14,29 @@ It has no runtime dependencies. Node.js (24.2 or later) runs the TypeScript sour
 Errors have the body `{"error": "<code>", "message": "<text>"}`.
 The requirements are in [PRD-upload](../docs/prds/PRD-upload.md) and [PRD-retrieval](../docs/prds/PRD-retrieval.md).
 
-## Run
+## Data
 
-1. Copy `.env.sample` to `.env` and set the values.
-2. Create a token: `node src/main.ts issue-key alice`. The command prints the token one time.
-3. Start the server: `node src/main.ts serve`.
-
-With the container image:
-
-```sh
-docker run -d -p 8080:8080 --env-file .env -v fileslop-data:/data ghcr.io/esukram/fileslop-server:0.1.0
-docker run --rm -v fileslop-data:/data ghcr.io/esukram/fileslop-server:0.1.0 issue-key alice
-```
-
-The data directory holds `keys.txt` (token hashes) and `index.jsonl` (lookup table). Keep it on persistent storage.
-Run one server instance per data directory.
+The data directory holds `keys.txt` (token hashes) and `index.jsonl` (lookup table). It must be on persistent storage.
+One server instance uses one data directory.
+To run the server and issue tokens, see [operations](../docs/operations.md).
 
 ## Source modules
 
-| File                | Purpose                                                       |
-| ------------------- | ------------------------------------------------------------- |
-| `src/main.ts`       | Entry point: commands `serve` and `issue-key`.                |
-| `src/config.ts`     | Reads and checks the `FILESLOP_*` variables.                  |
-| `src/app.ts`        | HTTP routes, header checks, upload and download.              |
-| `src/store.ts`      | `ObjectStore` port and the S3 adapter for AWS S3 and Hetzner. |
-| `src/sigv4.ts`      | AWS Signature Version 4.                                      |
-| `src/keys.ts`       | Token format, key file, `issue-key`.                          |
-| `src/file-index.ts` | Lookup table from file id to object key.                      |
-| `src/validate.ts`   | Header rules and the ISO week.                                |
+| File                 | Purpose                                                       |
+| -------------------- | ------------------------------------------------------------- |
+| `src/main.ts`        | Entry point: commands `serve` and `issue-key`.                |
+| `src/config.ts`      | Reads and checks the `FILESLOP_*` variables.                  |
+| `src/app.ts`         | HTTP routes, header checks, upload and download.              |
+| `src/store.ts`       | `ObjectStore` port and the S3 adapter for AWS S3 and Hetzner. |
+| `src/sigv4.ts`       | AWS Signature Version 4.                                      |
+| `src/keys.ts`        | Token format, key file, `issue-key`.                          |
+| `src/file-index.ts`  | Lookup table from file id to object key.                      |
+| `src/append-line.ts` | Appends a record to a file and flushes it to disk.            |
+| `src/validate.ts`    | Header rules and the ISO week.                                |
 
-## Test
+## Tests
 
-Run `pnpm test` in the repository root. Unit tests are in `test/`. End-to-end tests are in `../e2e/`.
+Unit tests are in `test/`. End-to-end tests are in `../e2e/`.
 
 ## Known problem
 

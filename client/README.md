@@ -11,6 +11,8 @@ npx -y fileslop upload plan.html
 # {"id":"…","url":"https://files.example.org/fileslop/<id>/plan.html","filename":"plan.html","contentType":"text/html; charset=utf-8","size":1234}
 ```
 
+Each GitHub release also has the package as `fileslop.tgz`. See [operations](../docs/operations.md#use-the-client).
+
 ## Configuration
 
 | Variable          | Config file key | Purpose                                     |
