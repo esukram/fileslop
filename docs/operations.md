@@ -84,7 +84,7 @@ Or run the tests on a host or in a container without the agent.
 
 1. Set the same version in `client/package.json` and `server/package.json`.
 2. Add a section for the version to `CHANGELOG.md`.
-3. Push a tag `v<version>`, for example `v0.1.0`.
+3. Push an annotated tag `v<version>`, for example `git tag -a v0.2.0 -m v0.2.0 && git push origin v0.2.0`.
 
 The release workflow creates the GitHub release, attaches the client tarball and pushes the container image.
 When the repository variable `NPM_PUBLISH` is `true`, it also publishes the client to npm with provenance.

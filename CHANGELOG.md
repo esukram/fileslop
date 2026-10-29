@@ -54,6 +54,6 @@ The first release. People and AI agents can now share files with one command. Gi
 - Documentation: product requirements, architecture decisions and an operations guide.
 - Repository: CI on Node.js 24 and 26, and a release workflow for the GitHub release, the container image and npm.
 
-[Unreleased]: https://github.com/esukram/fileslop/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/esukram/fileslop/compare/v0.1.1..HEAD
 [0.1.1]: https://github.com/esukram/fileslop/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/esukram/fileslop/releases/tag/v0.1.0
