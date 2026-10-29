@@ -5,7 +5,7 @@ description: Upload a file (HTML report, plan, screenshot, log, build output) wi
 
 # Fileslop
 
-Upload a file. Get a public URL. Anyone with the URL can read the file.
+Upload a file. Get a public URL. Anyone with the URL can read the file. You cannot delete or change the file.
 Do not upload secrets, credentials or private data.
 
 ## Upload a file
