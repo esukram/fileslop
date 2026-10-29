@@ -40,6 +40,12 @@ Unit tests are in `test/`. End-to-end tests are in `../e2e/`.
 
 ## Known problem
 
-Some APM agents (for example the Dynatrace OneAgent) change outgoing HTTP requests.
-On such hosts the agent removes the signed `If-None-Match` header, and the object store rejects the signature.
-Disable the agent's HTTP request injection for this process. See [ADR-008](../docs/architecture/ADR-008.md).
+If Real User Monitoring (RUM) is on, the Dynatrace OneAgent changes the HTTP traffic of monitored Node.js processes:
+
+- It removes conditional headers, for example `If-None-Match`, from incoming requests.
+  The mock object store of the end-to-end tests then rejects the signature, and the server returns 502.
+- It adds a script to HTML responses. Thus HTML files that the server delivers change.
+
+The agent does not change the outgoing requests to the object store.
+On such hosts, disable RUM for the process groups of the server and of the tests.
+See [Operations](../docs/operations.md) and [ADR-008](../docs/architecture/ADR-008.md).

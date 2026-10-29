@@ -8,15 +8,22 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). The
 ### Added
 
 - Documentation: a start page `docs/index.md` that links to all documents.
+- Documentation: Mermaid diagrams in the architecture decision records and the product requirements.
 
 ### Changed
 
-- Server: new files get a short identifier with 24 characters instead of a UUID: 18 random Bech32 characters and a Bech32m checksum. URLs are 12 characters shorter. Links from 0.1.0 continue to work.
-- Server: after an identifier collision, the server creates a new identifier. It does not return 409 `conflict` anymore. After three collisions in sequence, it returns 500 `internal_error`.
+- Server (breaking): new files get a short identifier with 24 characters instead of a UUID: 18 random Bech32 characters and a Bech32m checksum. URLs are 12 characters shorter. Clients that check the identifier format must accept the new format. Links from 0.1.0 continue to work.
+- Server (breaking): after an identifier collision, the server creates a new identifier. It does not return 409 `conflict` anymore. After three collisions in sequence, it returns 500 `internal_error`. Clients must not expect 409.
 
 ### Fixed
 
 - Server: the server closes the response of the object store when a key exists already.
+- Documentation: the known problem with the Dynatrace OneAgent names the correct cause. Real User Monitoring changes incoming requests and HTML responses, not outgoing requests.
+
+### Security
+
+- Server and client: the server checks and reads the key file through one file handle. The client checks and reads the upload file through one file descriptor. Thus the check and the read always see the same file.
+- Server: the request log replaces control characters and non-ASCII characters in the path. Thus a request cannot add false lines to the log.
 
 ## [0.1.0] - 2026-10-29
 

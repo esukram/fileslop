@@ -22,6 +22,9 @@ Without a container, run `node src/main.ts serve` in the `server` directory. Nod
 
 Run one server instance for each data directory. The data directory holds the token hashes and the lookup table.
 
+If the host has the Dynatrace OneAgent, disable Real User Monitoring (RUM) for the process group of the server.
+Use the setting `builtin:rum.processgroup` with `enable: false`. If RUM is on, the agent adds a script to the HTML files that the server delivers.
+
 ## Manage tokens
 
 To issue a token, do this command. The command prints the token one time:
@@ -71,6 +74,11 @@ npx skills add esukram/fileslop
 3. Do `pnpm check`. This command runs lint, format check, type check, unit tests and end-to-end tests.
 
 The end-to-end tests use a mock object store. They do not need network access.
+
+On a host with the Dynatrace OneAgent, the end-to-end tests can fail with status 502.
+If RUM is on, the agent removes the signed `If-None-Match` header from requests to the mock object store.
+Disable RUM for the process group `fileslop-workspace` (setting `builtin:rum.processgroup`, `enable: false`).
+Or run the tests on a host or in a container without the agent.
 
 ## Release
 
