@@ -1,6 +1,6 @@
 ---
-name: fileslop
-description: Upload a file (HTML report, plan, screenshot, log, build output) with the fileslop CLI and get a public URL. Use it to share an artifact, and to attach files to GitHub pull requests or issues, because GitHub cannot attach arbitrary files to pull requests.
+name: file-upload
+description: Upload a file (HTML report, plan, screenshot, log, build output) with the fileslop CLI and get a public URL. Use it when the user asks to upload, share, host or publish a file, or to get a link to a file. Also use it to attach a file or screenshot to a GitHub pull request or issue, because GitHub cannot attach arbitrary files to pull requests.
 ---
 
 # Fileslop
