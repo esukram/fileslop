@@ -25,7 +25,7 @@ Agents do not know Fileslop. They need short and exact instructions.
 
 ## Functional requirements
 
-- FR-1: The skill MUST be in `skills/fileslop/SKILL.md`.
+- FR-1: The skill MUST be in `skills/file-upload/SKILL.md`. The skill name MUST be `file-upload`.
 - FR-2: The skill MUST have YAML frontmatter with the fields `name` and `description`.
 - FR-3: The `description` MUST tell when to use the skill: share a file, publish an artifact, or attach a file to a pull request.
 - FR-4: The skill MUST be installable with `npx skills add esukram/fileslop`.
@@ -68,7 +68,7 @@ sequenceDiagram
 
 ## Acceptance criteria
 
-- AC-1: `skills/fileslop/SKILL.md` has YAML frontmatter with `name: fileslop` and a `description` of 51 to 1024 characters that contains "pull request". The file has fewer than 80 lines. (e2e: `e2e/skill.test.ts`)
+- AC-1: `skills/file-upload/SKILL.md` has YAML frontmatter with `name: file-upload` and a `description` of 51 to 1024 characters that contains "pull request". The file has fewer than 80 lines. (e2e: `e2e/skill.test.ts`)
 - AC-2: `npx skills add esukram/fileslop` installs the skill. (not automated: manual check before release)
 - AC-3: Each command in the skill runs without a usage error against the current client. (not automated: manual check before release)
 - AC-4: An agent with the skill uploads an HTML file and posts the URL on a test pull request. (not automated: manual check before release)

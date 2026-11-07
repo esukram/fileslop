@@ -1,6 +1,6 @@
 # Agent skill
 
-`fileslop/SKILL.md` tells AI agents how to upload artifacts with the `fileslop` CLI.
+`file-upload/SKILL.md` tells AI agents how to upload artifacts with the `fileslop` CLI.
 GitHub cannot attach arbitrary files to pull requests. The skill tells the agent to upload the file and post its URL.
 
 The [`skills`](https://github.com/vercel-labs/skills) CLI installs the skill. See [operations](../docs/operations.md#install-the-agent-skill).

@@ -5,6 +5,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). The
 
 ## [Unreleased]
 
+### Changed
+
+- Skill: the agent skill has the new name `file-upload`. The old name was `fileslop`. The install command `npx skills add esukram/fileslop` does not change. If you installed the old skill, remove it with `npx skills remove fileslop`.
+
 ## [0.2.0] - 2026-10-29
 
 File URLs are shorter. New files get a 24-character identifier with a checksum, and the server handles identifier collisions itself. Links from 0.1.x continue to work.
