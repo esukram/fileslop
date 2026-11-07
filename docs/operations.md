@@ -7,18 +7,28 @@ The READMEs describe what each part is. This document describes how to use it.
 
 1. Create a bucket in AWS S3 or in Hetzner Object Storage.
 2. Create an access key that can read and write objects in the bucket.
-3. Copy `server/.env.sample` to `.env`. Set the values.
-4. Start the container:
+3. Copy `server/.env.sample` to `fileslop.env`. Set the values.
+4. Make sure that the container user `node` (UID 1000) can read the file.
+5. Start the container. Mount the config file at `/config/fileslop/.env`. Without the file, the server does not start:
 
    ```sh
-   docker run -d --name fileslop -p 8080:8080 --env-file .env \
+   docker run -d --name fileslop -p 8080:8080 \
+     -v ./fileslop.env:/config/fileslop/.env:ro \
      -v fileslop-data:/data ghcr.io/esukram/fileslop-server:0.2.0
    ```
 
-5. Put a TLS reverse proxy in front of port 8080. The public URL must be the value of `FILESLOP_PUBLIC_URL`.
-6. Make sure that `GET <FILESLOP_PUBLIC_URL>healthz` returns `{"status":"ok"}`.
+6. Put a TLS reverse proxy in front of port 8080. The public URL must be the value of `FILESLOP_PUBLIC_URL`.
+7. Make sure that `GET <FILESLOP_PUBLIC_URL>healthz` returns `{"status":"ok"}`.
 
-Without a container, run `node src/main.ts serve` in the `server` directory. Node.js 24.2 or later is necessary.
+Without a container, use `npx`. Node.js 24.2 or later is necessary.
+
+1. Write the config file to `~/.config/fileslop/.env`.
+2. Do `chmod 600 ~/.config/fileslop/.env`. The file contains the secret key of the object store.
+3. Do `npx fileslop serve`.
+
+The server keeps its data in `~/.config/fileslop`, also when you start it from a different folder.
+`--config <file>` gives a different config file. `fileslop help serve` shows all options.
+For development, do `node src/main.ts serve --config <file>` in the `server` directory.
 
 Run one server instance for each data directory. The data directory holds the token hashes and the lookup table.
 
@@ -30,10 +40,11 @@ Use the setting `builtin:rum.processgroup` with `enable: false`. If RUM is on, t
 To issue a token, do this command. The command prints the token one time:
 
 ```sh
-docker run --rm -v fileslop-data:/data ghcr.io/esukram/fileslop-server:0.2.0 issue-key alice
+docker run --rm -v ./fileslop.env:/config/fileslop/.env:ro \
+  -v fileslop-data:/data ghcr.io/esukram/fileslop-server:0.2.0 issue-key alice
 ```
 
-Without a container, do `node src/main.ts issue-key alice` in the `server` directory.
+Without a container, do `npx fileslop issue-key alice`.
 
 To revoke a token, remove its line from `keys.txt` in the data directory. The server reads the changed file at the next upload. A restart is not necessary.
 

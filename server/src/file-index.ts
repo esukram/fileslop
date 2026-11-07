@@ -54,7 +54,8 @@ export class FileIndex {
   }
 
   async add(entry: IndexEntry): Promise<void> {
-    await appendLine(this.#file, JSON.stringify(entry));
+    // Owner only: the index lists all file ids, and an id is the secret part of a URL.
+    await appendLine(this.#file, JSON.stringify(entry), 0o600);
     this.#entries.set(entry.id, entry);
   }
 }

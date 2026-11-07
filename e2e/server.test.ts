@@ -1,8 +1,17 @@
 import assert from "node:assert/strict";
-import { readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { after, before, describe, test } from "node:test";
-import { issueKey, PUBLIC_URL, run, SERVER, serverEnv, startServer, tempDir } from "./helpers.ts";
+import {
+  emptyConfig,
+  issueKey,
+  PUBLIC_URL,
+  run,
+  SERVER,
+  serverEnv,
+  startServer,
+  tempDir,
+} from "./helpers.ts";
 import type { RunningServer } from "./helpers.ts";
 import { type MockS3, startMockS3 } from "./mock-s3.ts";
 
@@ -24,18 +33,22 @@ describe("server", () => {
     ...extra,
   });
 
+  // before() can stop half-way. after() closes only what before() started.
+  const cleanup: (() => Promise<void>)[] = [];
+
   before(async () => {
     mock = await startMockS3();
+    cleanup.push(() => mock.close());
     dataDir = await tempDir();
     token = await issueKey(dataDir, "alice");
     server = await startServer(
       serverEnv(mock, dataDir, { FILESLOP_MAX_UPLOAD_BYTES: "1024" }),
       dataDir,
     );
+    cleanup.push(() => server.stop());
   });
   after(async () => {
-    await server.stop();
-    await mock.close();
+    for (const close of cleanup.reverse()) await close();
   });
 
   test("uploads a file, stores metadata, and returns the public URL", async () => {
@@ -235,13 +248,15 @@ describe("server", () => {
 });
 
 describe("server lifecycle", () => {
-  test("keeps the lookup table across restarts", async () => {
+  test("keeps the lookup table across restarts", async (t) => {
     const mock = await startMockS3();
+    t.after(() => mock.close());
     const dataDir = await tempDir();
     const token = await issueKey(dataDir, "alice");
     const env = serverEnv(mock, dataDir);
-    let server = await startServer(env, dataDir);
-    const res = await fetch(server.url, {
+    const first = await startServer(env, dataDir);
+    t.after(() => first.stop());
+    const res = await fetch(first.url, {
       method: "POST",
       headers: {
         authorization: `Bearer ${token}`,
@@ -251,60 +266,81 @@ describe("server lifecycle", () => {
       body: "persist me",
     });
     const { url } = (await res.json()) as { url: string };
-    await server.stop();
+    await first.stop();
 
-    server = await startServer(env, dataDir);
-    try {
-      const again = await fetch(server.local(url));
-      assert.equal(again.status, 200);
-      assert.equal(await again.text(), "persist me");
-    } finally {
-      await server.stop();
-      await mock.close();
-    }
+    const second = await startServer(env, dataDir);
+    t.after(() => second.stop());
+    const again = await fetch(second.local(url));
+    assert.equal(again.status, 200);
+    assert.equal(await again.text(), "persist me");
   });
 
-  test("starts from a .env file with the aws_s3 backend", async () => {
+  test("starts from the default config file and keeps the data next to it", async (t) => {
     const mock = await startMockS3();
-    const dataDir = await tempDir();
-    const token = await issueKey(dataDir, "alice");
-    const env = serverEnv(mock, dataDir, {
+    t.after(() => mock.close());
+    const xdg = await tempDir();
+    const configDir = join(xdg, "fileslop");
+    await mkdir(configDir);
+    // Without FILESLOP_DATA_DIR, the data folder is the config folder.
+    const token = await issueKey(configDir, "alice");
+    const env = serverEnv(mock, configDir, {
       FILESLOP_BACKEND: "aws_s3",
       FILESLOP_S3_REGION: "eu-central-1",
     });
     delete (env as Record<string, string | undefined>)["FILESLOP_HETZNER_LOCATION"];
+    delete (env as Record<string, string | undefined>)["FILESLOP_DATA_DIR"];
     const dotenv = Object.entries(env)
       .map(([name, value]) => `${name}=${value}`)
       .join("\n");
     await writeFile(
-      join(dataDir, ".env"),
-      `# from .env\n${dotenv}\nFILESLOP_BASE_DIR=from-dotenv\n`,
+      join(configDir, ".env"),
+      `# from the config file\n${dotenv}\nFILESLOP_BASE_DIR=from-file\n`,
     );
-    // Real environment variables win over the .env file.
-    const server = await startServer({ FILESLOP_BASE_DIR: "from-env" }, dataDir);
-    try {
-      const res = await fetch(server.url, {
-        method: "POST",
-        headers: {
-          authorization: `Bearer ${token}`,
-          "content-type": "text/plain",
-          "x-fs-filename": "aws.txt",
-        },
-        body: "aws",
-      });
-      assert.equal(res.status, 201);
-      assert.match(mock.requests.at(-1)?.headers.authorization ?? "", /\/eu-central-1\/s3\//);
-      assert.match(mock.requests.at(-1)?.key ?? "", /^from-env\//);
-    } finally {
-      await server.stop();
-      await mock.close();
+    // Real environment variables win over the config file.
+    const server = await startServer({ XDG_CONFIG_HOME: xdg, FILESLOP_BASE_DIR: "from-env" }, xdg, [
+      SERVER,
+      "serve",
+    ]);
+    t.after(() => server.stop());
+    const res = await fetch(server.url, {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${token}`,
+        "content-type": "text/plain",
+        "x-fs-filename": "aws.txt",
+      },
+      body: "aws",
+    });
+    assert.equal(res.status, 201);
+    assert.match(mock.requests.at(-1)?.headers.authorization ?? "", /\/eu-central-1\/s3\//);
+    assert.match(mock.requests.at(-1)?.key ?? "", /^from-env\//);
+    const index = join(configDir, "index.jsonl");
+    assert.match(await readFile(index, "utf8"), /aws\.txt/);
+    assert.equal((await stat(index)).mode & 0o777, 0o600);
+  });
+
+  test("refuses to start without a config file", async () => {
+    // run() sets HOME to the working directory.
+    const home = await tempDir();
+    const defaultFile = join(home, ".config", "fileslop", ".env");
+    for (const args of [["serve"], ["issue-key", "alice"]]) {
+      const result = await run([SERVER, ...args], {}, home);
+      assert.equal(result.code, 2, args.join(" "));
+      assert.ok(
+        result.stderr.includes(`no config file ${defaultFile}\nFix: Create`),
+        result.stderr,
+      );
     }
+    const missing = join(home, "missing.env");
+    const explicit = await run([SERVER, "serve", "--config", missing], {}, home);
+    assert.equal(explicit.code, 2);
+    assert.ok(explicit.stderr.includes(`no config file ${missing}`), explicit.stderr);
   });
 
   test("exits with code 2 and lists all configuration problems", async () => {
     const dir = await tempDir();
     const result = await run(
-      [SERVER, "serve"],
+      [SERVER, "serve", "--config", await emptyConfig(dir)],
       {
         FILESLOP_BACKEND: "azure",
         FILESLOP_PORT: "abc",
@@ -327,8 +363,24 @@ describe("server lifecycle", () => {
 
   test("issue-key rejects an invalid username", async () => {
     const dir = await tempDir();
-    const result = await run([SERVER, "issue-key", "bad name"], { FILESLOP_DATA_DIR: dir }, dir);
+    const result = await run(
+      [SERVER, "issue-key", "bad name", "--config", await emptyConfig(dir)],
+      { FILESLOP_DATA_DIR: dir },
+      dir,
+    );
     assert.equal(result.code, 1);
     assert.match(result.stderr, /invalid username/);
+  });
+
+  test("issue-key creates the data folder for the owner only", async () => {
+    const dir = await tempDir();
+    const dataDir = join(dir, "new", "data");
+    const result = await run(
+      [SERVER, "issue-key", "alice", "--config", await emptyConfig(dir)],
+      { FILESLOP_DATA_DIR: dataDir },
+      dir,
+    );
+    assert.equal(result.code, 0, result.stderr);
+    assert.equal((await stat(dataDir)).mode & 0o777, 0o700);
   });
 });

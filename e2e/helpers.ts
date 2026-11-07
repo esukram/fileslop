@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { mkdtemp } from "node:fs/promises";
+import { mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { ACCESS_KEY_ID, type MockS3, SECRET_ACCESS_KEY } from "./mock-s3.ts";
@@ -58,9 +58,16 @@ export function serverEnv(mock: MockS3, dataDir: string, extra: Record<string, s
 export const SERVER = join(ROOT, "server/src/main.ts");
 export const CLIENT = join(ROOT, "client/src/cli.ts");
 
+/** Writes an empty server config file, so that only the environment configures the server. */
+export async function emptyConfig(dir: string): Promise<string> {
+  const file = join(dir, "fileslop.env");
+  await writeFile(file, "");
+  return file;
+}
+
 export async function issueKey(dataDir: string, username: string): Promise<string> {
   const result = await run(
-    [SERVER, "issue-key", username],
+    [SERVER, "issue-key", username, "--config", await emptyConfig(dataDir)],
     { FILESLOP_DATA_DIR: dataDir },
     dataDir,
   );
@@ -77,17 +84,21 @@ export interface RunningServer {
   local(publicUrl: string): string;
 }
 
+/** Starts the server. The default command uses an empty config file in `cwd`. */
 export async function startServer(
   env: Record<string, string>,
   cwd: string,
+  command?: string[],
 ): Promise<RunningServer> {
-  const child = spawn(process.execPath, [SERVER, "serve"], {
+  const args = command ?? [SERVER, "serve", "--config", await emptyConfig(cwd)];
+  const child = spawn(process.execPath, args, {
     cwd,
     env: { PATH: process.env["PATH"] ?? "", ...env },
   });
   let output = "";
   const url = await new Promise<string>((resolve, reject) => {
     const timer = setTimeout(() => {
+      child.kill("SIGKILL");
       reject(new Error(`server did not start:\n${output}`));
     }, 10_000);
     const onData = (chunk: Buffer): void => {
@@ -113,6 +124,11 @@ export async function startServer(
     stop: () =>
       new Promise((resolve) => {
         child.removeAllListeners("exit");
+        // A second stop, or a stop after a crash, must not wait for an exit that never comes.
+        if (child.exitCode !== null || child.signalCode !== null) {
+          resolve();
+          return;
+        }
         child.once("exit", () => {
           resolve();
         });

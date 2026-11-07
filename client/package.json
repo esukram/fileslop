@@ -1,11 +1,11 @@
 {
   "name": "fileslop",
   "version": "0.2.0",
-  "description": "CLI to upload files to a Fileslop server and get a public URL. Made for humans and AI agents.",
+  "description": "Upload files to a Fileslop server and get a public URL, or run the server. Made for humans and AI agents.",
   "license": "MIT",
   "type": "module",
   "bin": {
-    "fileslop": "dist/cli.js"
+    "fileslop": "dist/client/src/cli.js"
   },
   "files": [
     "dist"
@@ -25,6 +25,7 @@
     "file-sharing",
     "s3",
     "cli",
+    "server",
     "ai-agents",
     "github"
   ],

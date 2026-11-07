@@ -1,26 +1,33 @@
 #!/usr/bin/env node
 import { execFileSync } from "node:child_process";
 import { closeSync, fstatSync, openSync, readFileSync } from "node:fs";
+import { findPackageJSON } from "node:module";
 import { basename } from "node:path";
 import { parseArgs } from "node:util";
 import { maskToken, resolveConfig, TOKEN_PREFIX } from "./config.ts";
 import { mediaTypeFor } from "./mime.ts";
 
+// The nearest package.json: client/ in the sources, the package root in dist/client/src/.
 const VERSION = (
-  JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as {
+  JSON.parse(readFileSync(findPackageJSON(import.meta.url) ?? "package.json", "utf8")) as {
     version: string;
   }
 ).version;
+
+/** The server code loads only for the server commands. */
+const loadServer = () => import("../../server/src/main.ts");
 
 const HELP = `fileslop ${VERSION} - upload a file to a Fileslop server and get a public URL.
 
 Usage:
   fileslop upload <file> [options]   Upload a file. Prints JSON with the URL.
   fileslop config                    Show the configuration in use.
+  fileslop serve [--config <file>]   Start a Fileslop server. See: fileslop help serve
+  fileslop issue-key <username>      Create an upload token on the server host.
   fileslop help [command]            Show help for a command.
   fileslop --version                 Show the version.
 
-Configuration (environment variables win over the config file):
+Client configuration (environment variables win over the config file):
   FILESLOP_URL      Upload URL of the server, for example https://files.example.org/fileslop/
   FILESLOP_TOKEN    Upload token. It starts with ${TOKEN_PREFIX}
   FILESLOP_CONFIG   Path of the config file. Default: ~/.config/fileslop/config.json
@@ -301,6 +308,9 @@ export async function main(argv: string[]): Promise<number> {
       case "upload":
         await upload(rest);
         return 0;
+      case "serve":
+      case "issue-key":
+        return await (await loadServer()).main(argv);
       case "config":
         if (rest.includes("--help") || rest.includes("-h")) console.log(CONFIG_HELP);
         else showConfig();
@@ -310,6 +320,10 @@ export async function main(argv: string[]): Promise<number> {
       case "--help":
       case "-h": {
         const topic = rest[0];
+        if (topic === "serve" || topic === "issue-key") {
+          console.log((await loadServer()).USAGE);
+          return 0;
+        }
         console.log(topic === "upload" ? UPLOAD_HELP : topic === "config" ? CONFIG_HELP : HELP);
         return 0;
       }

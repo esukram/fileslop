@@ -7,6 +7,7 @@ import { join } from "node:path";
 import { after, before, describe, test } from "node:test";
 import {
   CLIENT,
+  emptyConfig,
   issueKey,
   run,
   type RunningServer,
@@ -26,14 +27,19 @@ describe("client cli", () => {
   const cli = (args: string[], extraEnv: Record<string, string> = {}, cwd = work) =>
     run([CLIENT, ...args], { ...env, ...extraEnv }, cwd);
 
+  // before() can stop half-way. after() closes only what before() started.
+  const cleanup: (() => Promise<void>)[] = [];
+
   before(async () => {
     mock = await startMockS3();
+    cleanup.push(() => mock.close());
     const dataDir = await tempDir();
     token = await issueKey(dataDir, "agent");
     server = await startServer(
       serverEnv(mock, dataDir, { FILESLOP_MAX_UPLOAD_BYTES: "4096" }),
       dataDir,
     );
+    cleanup.push(() => server.stop());
     work = await tempDir();
     // A git checkout with a GitHub remote, as agents use it.
     execFileSync("git", ["init", "-q", work]);
@@ -52,8 +58,7 @@ describe("client cli", () => {
     env = { FILESLOP_URL: server.url, FILESLOP_TOKEN: token };
   });
   after(async () => {
-    await server.stop();
-    await mock.close();
+    for (const close of cleanup.reverse()) await close();
   });
 
   test("uploads a file and prints the URL as JSON", async () => {
@@ -178,14 +183,42 @@ describe("client cli", () => {
     assert.match(shown.tokenSource, /config file/);
   });
 
+  test("runs the server: issue-key, serve, and an upload to it", async () => {
+    const dir = await tempDir();
+    const config = await emptyConfig(dir);
+    const env = serverEnv(mock, dir);
+    const key = await run([CLIENT, "issue-key", "bob", "--config", config], env, dir);
+    assert.equal(key.code, 0, key.stderr);
+    const local = await startServer(env, dir, [CLIENT, "serve", "--config", config]);
+    try {
+      const uploaded = await cli(["upload", "plan.html"], {
+        FILESLOP_URL: local.url,
+        FILESLOP_TOKEN: key.stdout.trim(),
+      });
+      assert.equal(uploaded.code, 0, uploaded.stderr);
+    } finally {
+      await local.stop();
+    }
+  });
+
   test("prints help for humans and agents", async () => {
     const help = await cli(["--help"]);
     assert.equal(help.code, 0);
-    for (const word of ["upload", "config", "FILESLOP_URL", "FILESLOP_TOKEN", "Exit codes"]) {
+    for (const word of [
+      "upload",
+      "config",
+      "serve",
+      "issue-key",
+      "FILESLOP_URL",
+      "FILESLOP_TOKEN",
+      "Exit codes",
+    ]) {
       assert.ok(help.stdout.includes(word), word);
     }
     const uploadHelp = await cli(["help", "upload"]);
     assert.match(uploadHelp.stdout, /--type[\s\S]*Examples/);
+    const serveHelp = await cli(["help", "serve"]);
+    assert.match(serveHelp.stdout, /--config[\s\S]*\.config\/fileslop\/\.env/);
     assert.match((await cli(["--version"])).stdout, /^\d+\.\d+\.\d+\n$/);
   });
 });

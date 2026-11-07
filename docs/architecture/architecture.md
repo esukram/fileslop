@@ -5,6 +5,7 @@ The system has four components:
 
 - **Server** (`server/`): accepts authenticated uploads and delivers files to the public.
 - **Client CLI** (`client/`, npm package `fileslop`): uploads files from a shell. Humans and AI agents use it.
+  The package also runs the server with `npx fileslop serve` (see [ADR-020](ADR-020.md)).
 - **Agent skill** (`skills/file-upload/`): tells AI agents how to upload files and attach them to pull requests.
 - **Object store**: AWS S3 or Hetzner Object Storage. It keeps the file content and metadata.
 
@@ -30,7 +31,7 @@ flowchart LR
 
 | ADR                   | Title                     | Decision                                                                                      |
 | --------------------- | ------------------------- | --------------------------------------------------------------------------------------------- |
-| [ADR-001](ADR-001.md) | Runtime                   | Use Node.js 24.2 or later with native type stripping and no runtime dependencies.             |
+| [ADR-001](ADR-001.md) | Runtime                   | Use Node.js 24.2 or later, type stripping, and no runtime dependencies. ADR-020 adds a build. |
 | [ADR-002](ADR-002.md) | Repository layout         | Use one pnpm workspace with `server/`, `client/`, `skills/file-upload/`, `e2e/`, and `docs/`. |
 | [ADR-003](ADR-003.md) | Object store adapter      | Use one S3-protocol adapter with our own Signature V4 code for AWS S3 and Hetzner.            |
 | [ADR-004](ADR-004.md) | Identifier and key layout | Use object keys with ISO week folders. ADR-019 replaces the UUID v4 identifiers.              |
@@ -41,7 +42,7 @@ flowchart LR
 | [ADR-009](ADR-009.md) | Header validation         | Validate filename and metadata headers strictly and reject invalid values.                    |
 | [ADR-010](ADR-010.md) | Safe delivery             | Deliver files with `nosniff`, a sandbox policy, and immutable cache headers.                  |
 | [ADR-011](ADR-011.md) | Upload size               | Buffer the body in memory up to 25 MiB by default.                                            |
-| [ADR-012](ADR-012.md) | Configuration             | Use `FILESLOP_` environment variables, a `.env` file, and a client JSON file.                 |
+| [ADR-012](ADR-012.md) | Configuration             | Use `FILESLOP_` variables and a client JSON file. ADR-020 replaces the `.env` file.           |
 | [ADR-013](ADR-013.md) | Client CLI design         | Publish a compiled `fileslop` package with agent-friendly output and exit codes.              |
 | [ADR-014](ADR-014.md) | Testing                   | Use `node:test` with unit tests and end-to-end tests against a mock S3 server.                |
 | [ADR-015](ADR-015.md) | Tooling                   | Use TypeScript 6.0, ESLint 10, Prettier 3, and pnpm with a release age delay.                 |
@@ -49,3 +50,4 @@ flowchart LR
 | [ADR-017](ADR-017.md) | Agent skill               | Supply a short `SKILL.md` for uploads and pull request artifacts.                             |
 | [ADR-018](ADR-018.md) | Documentation language    | Write all text in ASD-STE100 Simplified Technical English.                                    |
 | [ADR-019](ADR-019.md) | File identifiers          | Use 24-character Bech32m identifiers and create a new identifier after a collision.           |
+| [ADR-020](ADR-020.md) | Server in the npm package | Run the server with `npx fileslop serve`. It needs the config file `~/.config/fileslop/.env`. |

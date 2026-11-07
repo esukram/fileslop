@@ -1,7 +1,8 @@
 # Fileslop server
 
 The server receives files over HTTP, stores them in an S3-compatible object store, and serves them at a public URL.
-It has no runtime dependencies. Node.js (24.2 or later) runs the TypeScript sources directly.
+It has no runtime dependencies. Node.js (24.2 or later) runs the TypeScript sources directly in the container image.
+The npm package `fileslop` contains the compiled server. `npx fileslop serve` starts it (see [ADR-020](../docs/architecture/ADR-020.md)).
 
 ## HTTP interface
 
@@ -16,7 +17,9 @@ The requirements are in [PRD-upload](../docs/prds/PRD-upload.md) and [PRD-retrie
 
 ## Data
 
+The server needs a config file. The default is `~/.config/fileslop/.env`. `--config <file>` gives a different path.
 The data directory holds `keys.txt` (token hashes) and `index.jsonl` (lookup table). It must be on persistent storage.
+The default data directory is `~/.config/fileslop`. The container image uses `/data`.
 One server instance uses one data directory.
 To run the server and issue tokens, see [operations](../docs/operations.md).
 
@@ -24,7 +27,7 @@ To run the server and issue tokens, see [operations](../docs/operations.md).
 
 | File                 | Purpose                                                       |
 | -------------------- | ------------------------------------------------------------- |
-| `src/main.ts`        | Entry point: commands `serve` and `issue-key`.                |
+| `src/main.ts`        | Commands `serve` and `issue-key`. The client also calls it.   |
 | `src/config.ts`      | Reads and checks the `FILESLOP_*` variables.                  |
 | `src/app.ts`         | HTTP routes, header checks, upload and download.              |
 | `src/store.ts`       | `ObjectStore` port and the S3 adapter for AWS S3 and Hetzner. |

@@ -5,9 +5,24 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). The
 
 ## [Unreleased]
 
+The npm package `fileslop` also runs the server: `npx fileslop serve`.
+The server now needs a config file. This is a breaking change for container users and for starts from the sources.
+
+### Added
+
+- Client: the commands `fileslop serve` and `fileslop issue-key <username>` run the server from the npm package. `fileslop help serve` shows the server help.
+
 ### Changed
 
+- Server (breaking): the server reads its configuration from `~/.config/fileslop/.env` (`$XDG_CONFIG_HOME/fileslop/.env`). `--config <file>` gives a different path. Without the file, `serve` and `issue-key` stop with exit code 2. Real environment variables still win over the file.
+- Server (breaking): the container image reads the config file from `/config/fileslop/.env`. `docker run --env-file` alone does not start the server. Mount the file: `-v ./fileslop.env:/config/fileslop/.env:ro`.
+- Server (breaking): the server does not read `.env` from the current folder. The default data folder is `~/.config/fileslop` instead of `./data`. The container image still uses `/data`.
+- Server: error messages start with `fileslop:` and have a `Fix:` line.
 - Skill: the agent skill has the new name `file-upload`. The old name was `fileslop`. The install command `npx skills add esukram/fileslop` does not change. If you installed the old skill, remove it with `npx skills remove fileslop`.
+
+### Security
+
+- Server: the server creates a new data folder with mode `0700` and `index.jsonl` with mode `0600`. The index lists all file identifiers.
 
 ## [0.2.0] - 2026-10-29
 

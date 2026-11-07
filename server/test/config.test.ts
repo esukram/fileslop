@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
+import { homedir } from "node:os";
+import { join } from "node:path";
 import { test } from "node:test";
-import { ConfigError, loadConfig } from "../src/config.ts";
+import { ConfigError, configFile, dataDir, loadConfig } from "../src/config.ts";
 
 const env = {
   FILESLOP_PUBLIC_URL: "https://files.example.org/fileslop",
@@ -21,4 +23,11 @@ test("loadConfig applies defaults and adds the trailing slash", () => {
 test("loadConfig rejects ports outside 0-65535", () => {
   assert.throws(() => loadConfig({ ...env, FILESLOP_PORT: "65536" }), ConfigError);
   assert.equal(loadConfig({ ...env, FILESLOP_PORT: "0" }).port, 0);
+});
+
+test("the config file is in the XDG config folder, which is also the default data folder", () => {
+  assert.equal(configFile({}), join(homedir(), ".config", "fileslop", ".env"));
+  assert.equal(configFile({ XDG_CONFIG_HOME: "/x" }), "/x/fileslop/.env");
+  assert.equal(dataDir({ XDG_CONFIG_HOME: "/x" }), "/x/fileslop");
+  assert.equal(dataDir({ XDG_CONFIG_HOME: "/x", FILESLOP_DATA_DIR: "/d" }), "/d");
 });

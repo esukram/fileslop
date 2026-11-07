@@ -42,6 +42,12 @@ jobs:
         run: |
           pnpm --filter fileslop pack --out "$RUNNER_TEMP/fileslop.tgz"
           npx -y --package="$RUNNER_TEMP/fileslop.tgz" fileslop --version
+          # The server code loads from the package: without a config file, serve exits with code 2.
+          code=0
+          npx -y --package="$RUNNER_TEMP/fileslop.tgz" fileslop serve --config "$RUNNER_TEMP/none.env" 2> serve.err || code=$?
+          cat serve.err
+          test "$code" = 2
+          grep -q "no config file $RUNNER_TEMP/none.env" serve.err
       - name: Fail on committed Fileslop tokens
         run: |
           if git grep -nE 'es\.fs1\.key\.[A-Za-z0-9_-]{43}'; then
@@ -53,3 +59,8 @@ jobs:
         run: |
           docker build -t fileslop-server:ci server
           docker run --rm fileslop-server:ci help
+          code=0
+          docker run --rm fileslop-server:ci serve 2> serve.err || code=$?
+          cat serve.err
+          test "$code" = 2
+          grep -q "no config file /config/fileslop/.env" serve.err
