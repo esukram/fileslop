@@ -29,8 +29,8 @@ Agents do not know Fileslop. They need short and exact instructions.
 - FR-2: The skill MUST have YAML frontmatter with the fields `name` and `description`.
 - FR-3: The `description` MUST tell when to use the skill: share a file, publish an artifact, or attach a file to a pull request.
 - FR-4: The skill MUST be installable with `npx skills add esukram/fileslop`.
-- FR-5: The skill MUST show the upload command `npx -y fileslop upload <file>`.
-- FR-6: The skill MUST show the configuration check `npx -y fileslop config`.
+- FR-5: The skill MUST show the upload command `fileslop upload <file>`. It MUST tell the agent to use `npx -y fileslop` in place of `fileslop` if the shell does not find `fileslop` (see [ADR-021](../architecture/ADR-021.md)).
+- FR-6: The skill MUST show the configuration check `fileslop config`.
 - FR-7: The skill MUST tell the agent to use `--type` for unknown extensions.
 - FR-8: The skill MUST tell the agent to follow the `Fix:` line after an error.
 - FR-9: The skill MUST explain the exit codes: 0 is success, 1 is an upload failure, 2 is a usage or configuration error.
@@ -46,7 +46,7 @@ sequenceDiagram
   participant S as Fileslop server
   participant GH as GitHub
   actor R as Reviewer
-  A->>CLI: npx -y fileslop upload plan.html
+  A->>CLI: fileslop upload plan.html
   CLI->>S: POST with the token from FILESLOP_TOKEN
   S-->>CLI: 201 with JSON body
   CLI-->>A: JSON with url on stdout, exit code 0

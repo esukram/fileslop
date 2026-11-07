@@ -16,13 +16,14 @@ Fileslop closes this gap. You upload a file with one command. You get a URL. You
 
 - **A small HTTP server.** It keeps the files in your own object store: AWS S3 or Hetzner Object Storage.
   Uploads need a token. Reading a file needs only its URL.
-- **A command line client.** `npx -y fileslop upload plan.html` prints the URL as JSON.
+- **A command line client.** `npm install -g fileslop` installs it. `fileslop upload plan.html` prints the URL as JSON.
+  Without installation, `npx -y fileslop upload plan.html` does the same.
   Its help and error messages tell humans and agents how to fix problems.
   `npx fileslop serve` runs the server without a container.
 - **An agent skill.** `npx skills add esukram/fileslop` teaches coding agents to upload artifacts and to attach them to pull requests.
 
 ```sh
-$ npx -y fileslop upload plan.html
+$ fileslop upload plan.html
 {"id":"x6cnmzueszjvmgrevycrmwjd","url":"https://files.example.org/fileslop/x6cnmzueszjvmgrevycrmwjd/plan.html","filename":"plan.html","contentType":"text/html; charset=utf-8","size":1234}
 ```
 

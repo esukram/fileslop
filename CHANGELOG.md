@@ -10,6 +10,8 @@ The server now needs a config file. This is a breaking change for container user
 
 ### Added
 
+- Client: the client also reads `FILESLOP_URL` and `FILESLOP_TOKEN` from `~/.config/fileslop/.env`, the same file format as the server. Environment variables win over `.env`, and `.env` wins over `config.json`. `fileslop config` shows the path in the field `envFile`.
+- Documentation and skill: install the client one time with `npm install -g fileslop`, then run `fileslop …`. Without installation, `npx -y fileslop` continues to work. The skill tells agents to use it if the shell does not find `fileslop`.
 - Client: the commands `fileslop serve` and `fileslop issue-key <username>` run the server from the npm package. `fileslop help serve` shows the server help.
 
 ### Changed

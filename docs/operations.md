@@ -51,20 +51,32 @@ To revoke a token, remove its line from `keys.txt` in the data directory. The se
 ## Use the client
 
 1. Get the upload URL and a token from the server administrator.
-2. Set the configuration:
+2. Install the client one time: `npm install -g fileslop`. `pnpm add -g fileslop` and `bun add -g fileslop` also work.
+3. Write the configuration to `~/.config/fileslop/.env`:
 
    ```sh
-   export FILESLOP_URL=https://files.example.org/fileslop/
-   export FILESLOP_TOKEN=es.fs1.key.…
+   FILESLOP_URL=https://files.example.org/fileslop/
+   FILESLOP_TOKEN=es.fs1.key.…
    ```
 
-   Alternatively, write `{"url": "…", "token": "…"}` to `~/.config/fileslop/config.json`.
-
-3. Upload a file:
+4. Do `chmod 600 ~/.config/fileslop/.env`. The file contains the token.
+5. Do `fileslop config`. The command shows the URL, the masked token and their sources.
+6. Upload a file:
 
    ```sh
-   npx -y fileslop upload plan.html
+   fileslop upload plan.html
    ```
+
+Environment variables with the same names have priority over the file. `~/.config/fileslop/config.json` (`{"url": "…", "token": "…"}`) also works.
+
+To get a new version, do `npm update -g fileslop`. A global installation does not update itself.
+
+Without a global installation, for example in CI or in a sandbox, use `npx -y fileslop` in place of `fileslop`.
+Give the values as environment variables, for example as CI secrets:
+
+```sh
+npx -y fileslop upload plan.html
+```
 
 If npm cannot find the `fileslop` package, use the tarball of the latest GitHub release:
 

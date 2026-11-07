@@ -27,12 +27,19 @@ Usage:
   fileslop help [command]            Show help for a command.
   fileslop --version                 Show the version.
 
-Client configuration (environment variables win over the config file):
+Installation: npm install -g fileslop
+  Without it, use "npx -y fileslop" in place of "fileslop".
+
+Client configuration:
   FILESLOP_URL      Upload URL of the server, for example https://files.example.org/fileslop/
   FILESLOP_TOKEN    Upload token. It starts with ${TOKEN_PREFIX}
-  FILESLOP_CONFIG   Path of the config file. Default: ~/.config/fileslop/config.json
-                    ($XDG_CONFIG_HOME/fileslop/config.json when XDG_CONFIG_HOME is set)
-  Config file: {"url": "https://files.example.org/fileslop/", "token": "${TOKEN_PREFIX}..."}
+  Set the two variables in the environment or in ~/.config/fileslop/.env
+  ($XDG_CONFIG_HOME/fileslop/.env when XDG_CONFIG_HOME is set):
+    FILESLOP_URL=https://files.example.org/fileslop/
+    FILESLOP_TOKEN=<token>
+  config.json in the same folder also works: {"url": "...", "token": "..."}
+  FILESLOP_CONFIG   Path of config.json. The .env file is in the same folder.
+  Priority: environment variables, then .env, then config.json.
 
 Exit codes: 0 success, 1 upload failed, 2 usage or configuration error.`;
 
@@ -137,19 +144,21 @@ const METADATA_RE = /^[A-Za-z0-9][A-Za-z0-9._/-]{0,127}$/;
 
 function requireConfig(): { url: string; token: string } {
   const config = resolveConfig(process.env);
-  if (config.fileError) throw new UsageError(config.fileError, `Fix the JSON in ${config.file}.`);
+  if (config.fileError) {
+    throw new UsageError(config.fileError, "Correct the file, or make it readable for your user.");
+  }
   const url = config.url.value;
   const token = config.token.value;
   if (!url) {
     throw new UsageError(
       "no server URL",
-      `Set FILESLOP_URL, for example export FILESLOP_URL=https://files.example.org/fileslop/ , or add "url" to ${config.file}.`,
+      `Set FILESLOP_URL=https://files.example.org/fileslop/ in ${config.envFile} or in the environment.`,
     );
   }
   if (!token) {
     throw new UsageError(
       "no upload token",
-      `Set FILESLOP_TOKEN=${TOKEN_PREFIX}... , or add "token" to ${config.file}. Ask the server admin for a token.`,
+      `Set FILESLOP_TOKEN=${TOKEN_PREFIX}... in ${config.envFile} or in the environment. Ask the server admin for a token.`,
     );
   }
   if (!token.startsWith(TOKEN_PREFIX)) {
@@ -292,6 +301,7 @@ function showConfig(): void {
         token: config.token.value === undefined ? null : maskToken(config.token.value),
         tokenSource: config.token.source,
         configFile: config.file,
+        envFile: config.envFile,
         ...(config.fileError ? { configFileError: config.fileError } : {}),
       },
       null,

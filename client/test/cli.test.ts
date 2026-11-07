@@ -50,6 +50,27 @@ test("resolveConfig prefers environment variables over the config file", async (
   assert.match(resolveConfig({ FILESLOP_CONFIG: file }).fileError ?? "", /cannot read/);
 });
 
+test("resolveConfig reads .env next to config.json, between the environment and config.json", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "fileslop-"));
+  const file = join(dir, "config.json");
+  await writeFile(file, JSON.stringify({ url: "https://json.example/", token: "es.fs1.key.json" }));
+  await writeFile(
+    join(dir, ".env"),
+    "# client\nFILESLOP_URL=https://dotenv.example/\nFILESLOP_TOKEN=es.fs1.key.dotenv\n",
+  );
+  const config = resolveConfig({ FILESLOP_CONFIG: file });
+  assert.equal(config.envFile, join(dir, ".env"));
+  assert.equal(config.url.value, "https://dotenv.example/");
+  assert.equal(config.url.source, `config file ${join(dir, ".env")}`);
+  assert.equal(config.token.value, "es.fs1.key.dotenv");
+  const fromEnv = resolveConfig({ FILESLOP_CONFIG: file, FILESLOP_TOKEN: "es.fs1.key.env" });
+  assert.equal(fromEnv.token.value, "es.fs1.key.env");
+
+  // config.json gives the values that .env does not set.
+  await writeFile(join(dir, ".env"), "FILESLOP_URL=https://dotenv.example/\n");
+  assert.equal(resolveConfig({ FILESLOP_CONFIG: file }).token.value, "es.fs1.key.json");
+});
+
 test("maskToken shows only the start of a token", () => {
   assert.equal(maskToken("es.fs1.key.abcdefghijkl"), "es.fs1.key.abcd…");
   assert.match(maskToken("secret"), /invalid/);

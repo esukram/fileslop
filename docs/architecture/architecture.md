@@ -15,7 +15,7 @@ For product requirements, see [PRDs](../prds/prds.md).
 ```mermaid
 flowchart LR
   human([Developer]) --> cli
-  agent([AI agent]) --> cli["Client CLI<br/>npx -y fileslop"]
+  agent([AI agent]) --> cli["Client CLI<br/>fileslop or npx -y fileslop"]
   agent -. loads .-> skill["Agent skill<br/>SKILL.md"]
   cli -- "POST {prefix}/<br/>Bearer token" --> server
   reader([Reviewer in a browser]) -- "GET {prefix}/{id}/{filename}<br/>no token" --> server
@@ -51,3 +51,4 @@ flowchart LR
 | [ADR-018](ADR-018.md) | Documentation language    | Write all text in ASD-STE100 Simplified Technical English.                                    |
 | [ADR-019](ADR-019.md) | File identifiers          | Use 24-character Bech32m identifiers and create a new identifier after a collision.           |
 | [ADR-020](ADR-020.md) | Server in the npm package | Run the server with `npx fileslop serve`. It needs the config file `~/.config/fileslop/.env`. |
+| [ADR-021](ADR-021.md) | Client installation       | Install the client globally, with `npx -y` as the fallback. The client also reads `.env`.     |
