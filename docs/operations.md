@@ -14,7 +14,7 @@ The READMEs describe what each part is. This document describes how to use it.
    ```sh
    docker run -d --name fileslop -p 8080:8080 \
      -v ./fileslop.env:/config/fileslop/.env:ro \
-     -v fileslop-data:/data ghcr.io/esukram/fileslop-server:0.2.0
+     -v fileslop-data:/data ghcr.io/esukram/fileslop-server:0.3.0
    ```
 
 6. Put a TLS reverse proxy in front of port 8080. The public URL must be the value of `FILESLOP_PUBLIC_URL`.
@@ -41,7 +41,7 @@ To issue a token, do this command. The command prints the token one time:
 
 ```sh
 docker run --rm -v ./fileslop.env:/config/fileslop/.env:ro \
-  -v fileslop-data:/data ghcr.io/esukram/fileslop-server:0.2.0 issue-key alice
+  -v fileslop-data:/data ghcr.io/esukram/fileslop-server:0.3.0 issue-key alice
 ```
 
 Without a container, do `npx fileslop issue-key alice`.
@@ -107,7 +107,7 @@ Or run the tests on a host or in a container without the agent.
 
 1. Set the same version in `client/package.json` and `server/package.json`.
 2. Add a section for the version to `CHANGELOG.md`.
-3. Push an annotated tag `v<version>`, for example `git tag -a v0.2.0 -m v0.2.0 && git push origin v0.2.0`.
+3. Push an annotated tag `v<version>`, for example `git tag -a v0.3.0 -m v0.3.0 && git push origin v0.3.0`.
 
 The release workflow creates the GitHub release, attaches the client tarball and pushes the container image.
 When the repository variable `NPM_PUBLISH` is `true`, it also publishes the client to npm with provenance.

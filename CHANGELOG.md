@@ -5,6 +5,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). The
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-07
+
 The npm package `fileslop` also runs the server: `npx fileslop serve`.
 The server now needs a config file. This is a breaking change for container users and for starts from the sources.
 
@@ -80,7 +82,8 @@ The first release. People and AI agents can now share files with one command. Gi
 - Documentation: product requirements, architecture decisions and an operations guide.
 - Repository: CI on Node.js 24 and 26, and a release workflow for the GitHub release, the container image and npm.
 
-[Unreleased]: https://github.com/esukram/fileslop/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/esukram/fileslop/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/esukram/fileslop/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/esukram/fileslop/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/esukram/fileslop/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/esukram/fileslop/releases/tag/v0.1.0
