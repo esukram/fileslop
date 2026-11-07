@@ -64,14 +64,14 @@ flowchart LR
 
    ```sh
    docker run -v ./fileslop.env:/config/fileslop/.env:ro -v fileslop-data:/data -p 8080:8080 \
-     ghcr.io/esukram/fileslop-server:0.2.0
+     ghcr.io/esukram/fileslop-server:0.3.0
    ```
 
 7. Create a token for each user. Use the same file and the same volume:
 
    ```sh
    docker run --rm -v ./fileslop.env:/config/fileslop/.env:ro -v fileslop-data:/data \
-     ghcr.io/esukram/fileslop-server:0.2.0 issue-key <username>
+     ghcr.io/esukram/fileslop-server:0.3.0 issue-key <username>
    ```
 
 8. Give the token to the user. The command shows the token one time only.
