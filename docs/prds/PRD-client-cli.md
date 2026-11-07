@@ -14,7 +14,7 @@ Agents need predictable output and clear next steps after an error.
 ## Goals
 
 - Upload a file with one short command.
-- Run without a global installation.
+- Install one time with `npm install -g fileslop`. Run without installation with `npx -y fileslop`.
 - Give machine-readable output and actionable errors.
 
 ## Non-goals
@@ -25,7 +25,7 @@ Agents need predictable output and clear next steps after an error.
 
 ## Functional requirements
 
-- FR-1: The client MUST be the npm package `fileslop`. It MUST run with `npx -y fileslop`.
+- FR-1: The client MUST be the npm package `fileslop`. It MUST run as `fileslop` after `npm install -g fileslop`, and with `npx -y fileslop` (see [ADR-021](../architecture/ADR-021.md)).
 - FR-2: The client MUST have no runtime dependencies.
 - FR-3: The command `upload <file>` MUST upload the file with the headers of [PRD-upload](PRD-upload.md).
 - FR-4: `upload` MUST map common file extensions to a media type.
@@ -43,7 +43,7 @@ Agents need predictable output and clear next steps after an error.
 - FR-10: If git or the remote is not available, the client MUST continue without these headers.
 - FR-11: The client MUST read `FILESLOP_URL` and `FILESLOP_TOKEN` from the environment.
 - FR-12: The client MUST read `url` and `token` from `$XDG_CONFIG_HOME/fileslop/config.json`. The default is `~/.config/fileslop/config.json`. `FILESLOP_CONFIG` MUST override the path.
-- FR-13: Environment variables MUST have priority over the config file.
+- FR-13: The client MUST read `FILESLOP_URL` and `FILESLOP_TOKEN` from the file `.env` in the folder of `config.json`. The priority MUST be: environment variables, then `.env`, then `config.json`.
 - FR-14: The command `config` MUST print a JSON object on stdout with these fields:
 
 | Field             | Value                                                                                                                         |
@@ -53,7 +53,8 @@ Agents need predictable output and clear next steps after an error.
 | `token`           | The masked token: the prefix `es.fs1.key.`, the next 4 characters, and `…`. `null` if not set. A note if the prefix is wrong. |
 | `tokenSource`     | The source of the token.                                                                                                      |
 | `configFile`      | The path of the config file.                                                                                                  |
-| `configFileError` | Only if the client cannot read the config file: the problem.                                                                  |
+| `envFile`         | The path of the `.env` file.                                                                                                  |
+| `configFileError` | Only if the client cannot read `config.json` or `.env`: the problem.                                                          |
 
 A source is one of these strings: `environment variable FILESLOP_URL` (or `FILESLOP_TOKEN`), `config file <path>`, or `not set`.
 `config` MUST exit with code 2 if a value is missing or invalid, or if the client cannot read the config file.
@@ -79,9 +80,10 @@ A source is one of these strings: `environment variable FILESLOP_URL` (or `FILES
 - AC-4: `fileslop upload` without a token exits with 2 and prints a `Fix:` line. (e2e: `e2e/client.test.ts`)
 - AC-5: An upload with a wrong token exits with 1 and prints the server error. (e2e: `e2e/client.test.ts`)
 - AC-6: With a config file, `fileslop config` shows `tokenSource` `config file <path>` and a masked token. The output does not contain the full token. (e2e: `e2e/client.test.ts`)
-- AC-7: An environment variable has priority over the config file. (unit: `client/test/cli.test.ts`)
+- AC-7: An environment variable has priority over the config file. A value in `.env` has priority over `config.json`. (unit: `client/test/cli.test.ts`)
 - AC-8: The MIME map returns `text/html; charset=utf-8` for `.html` and `image/png` for `.png`. (unit: `client/test/cli.test.ts`)
 - AC-9: The default filename rules change `my report (final).pdf` to `my-report-final-.pdf`, `.env` to `env`, and `äöü` to `file`. (unit: `client/test/cli.test.ts`)
 - AC-10: The flags `--name` and `--repository` override the defaults. `--no-git` sends no git metadata. (e2e: `e2e/client.test.ts`)
 - AC-11: A server that answers 201 without `url` gives exit code 1 and a `Fix:` line. (e2e: `e2e/client.test.ts`)
 - AC-12: A server that does not answer gives exit code 1 and a `Fix:` line. (e2e: `e2e/client.test.ts`)
+- AC-13: With `~/.config/fileslop/.env`, an upload succeeds. `fileslop config` shows `envFile` and `tokenSource` `config file <path of .env>`. (e2e: `e2e/client.test.ts`)

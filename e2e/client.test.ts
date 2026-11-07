@@ -183,6 +183,21 @@ describe("client cli", () => {
     assert.match(shown.tokenSource, /config file/);
   });
 
+  test("reads the .env file in the config folder", async () => {
+    const home = await tempDir();
+    const dir = join(home, ".config", "fileslop");
+    await mkdir(dir, { recursive: true });
+    await writeFile(join(dir, ".env"), `FILESLOP_URL=${server.url}\nFILESLOP_TOKEN=${token}\n`);
+    const upload = await run([CLIENT, "upload", join(work, "plan.html")], { HOME: home }, home);
+    assert.equal(upload.code, 0, upload.stderr);
+
+    const config = await run([CLIENT, "config"], { HOME: home }, home);
+    assert.equal(config.code, 0, config.stderr);
+    const shown = JSON.parse(config.stdout) as { tokenSource: string; envFile: string };
+    assert.equal(shown.envFile, join(dir, ".env"));
+    assert.equal(shown.tokenSource, `config file ${join(dir, ".env")}`);
+  });
+
   test("runs the server: issue-key, serve, and an upload to it", async () => {
     const dir = await tempDir();
     const config = await emptyConfig(dir);
@@ -211,6 +226,8 @@ describe("client cli", () => {
       "issue-key",
       "FILESLOP_URL",
       "FILESLOP_TOKEN",
+      "~/.config/fileslop/.env",
+      "npm install -g fileslop",
       "Exit codes",
     ]) {
       assert.ok(help.stdout.includes(word), word);

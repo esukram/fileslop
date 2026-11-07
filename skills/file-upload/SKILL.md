@@ -11,8 +11,10 @@ Do not upload secrets, credentials or private data.
 ## Upload a file
 
 ```sh
-npx -y fileslop upload <file>
+fileslop upload <file>
 ```
+
+If the shell does not find `fileslop`, use `npx -y fileslop` in place of `fileslop` in all commands.
 
 The command prints one line of JSON. Use the `url` value:
 
@@ -28,12 +30,12 @@ The command prints one line of JSON. Use the `url` value:
 
 - Unknown file extension: add `--type <media-type>`, for example `--type text/plain`.
 - Other name in the URL: add `--name <name>`.
-- All options: `npx -y fileslop help upload`.
+- All options: `fileslop help upload`.
 
 ## Attach a file to a GitHub pull request
 
 ```sh
-url=$(npx -y fileslop upload report.html | jq -er .url) &&
+url=$(fileslop upload report.html | jq -er .url) &&
   gh pr comment <number> --body "Report: $url"
 ```
 
@@ -43,7 +45,7 @@ For an image, use `![screenshot]($url)` in the comment body.
 
 Exit code 0 is success. On other exit codes, the CLI writes the problem and a `Fix:` line to stderr. Do the fix.
 
-- Exit code 2: usage or configuration problem. Run `npx -y fileslop config`.
+- Exit code 2: usage or configuration problem. Run `fileslop config`.
   The CLI needs `FILESLOP_URL` and `FILESLOP_TOKEN`. If they are missing, ask the user. Do not invent values.
 - Exit code 1: the upload failed. Read the HTTP status and the `Fix:` line.
 - npm cannot find `fileslop`: use `npx -y --allow-remote=all https://github.com/esukram/fileslop/releases/latest/download/fileslop.tgz` in place of `npx -y fileslop`.
@@ -51,5 +53,5 @@ Exit code 0 is success. On other exit codes, the CLI writes the problem and a `F
 ## Token
 
 - Do not put the token in command lines, files in the repository, or comments.
-- Use the environment variable `FILESLOP_TOKEN` or the config file `~/.config/fileslop/config.json`.
+- Use the environment variable `FILESLOP_TOKEN` or the config file `~/.config/fileslop/.env`.
 - Never print or log the token.
