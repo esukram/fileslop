@@ -1,29 +1,26 @@
-import { existsSync } from "node:fs";
 import { join } from "node:path";
+import { parseArgs } from "node:util";
 import { createApp } from "./app.ts";
-import { ConfigError, dataDir, loadConfig } from "./config.ts";
+import { ConfigError, configFile, dataDir, loadConfig, loadConfigFile } from "./config.ts";
 import { FileIndex } from "./file-index.ts";
 import { issueKey, KeyStore } from "./keys.ts";
 import { createStore } from "./store.ts";
 
-const USAGE = `Usage: fileslop-server <command>
+export const USAGE = `Usage:
+  fileslop serve [--config <file>]                 Start the HTTP server.
+  fileslop issue-key <username> [--config <file>]  Create a token for <username>. Print it one time.
 
-Commands:
-  serve                 Start the HTTP server (default).
-  issue-key <username>  Create a new token for <username> and print it once.
-  help                  Show this help.
+The server commands need a config file with FILESLOP_* variables.
+Default: ~/.config/fileslop/.env ($XDG_CONFIG_HOME/fileslop/.env when XDG_CONFIG_HOME is set).
+Real environment variables win over the file. The sample file shows all variables:
+  https://github.com/esukram/fileslop/blob/main/server/.env.sample
+FILESLOP_DATA_DIR is the folder for keys.txt and index.jsonl. Default: ~/.config/fileslop
 
-Configuration comes from environment variables or a .env file in the
-working directory. See .env.sample for all variables.`;
-
-if (existsSync(".env")) process.loadEnvFile(".env");
-
-const [command = "serve", ...args] = process.argv.slice(2);
-const keysFile = join(dataDir(process.env), "keys.txt");
+Exit codes: 0 success, 1 failure, 2 usage or configuration error.`;
 
 async function serve(): Promise<void> {
   const config = loadConfig(process.env);
-  const keys = new KeyStore(keysFile);
+  const keys = new KeyStore(join(config.dataDir, "keys.txt"));
   await keys.load();
   const index = await FileIndex.open(join(config.dataDir, "index.jsonl"));
   const server = createApp({
@@ -50,28 +47,51 @@ async function serve(): Promise<void> {
   }
 }
 
-try {
-  switch (command) {
-    case "serve":
-      await serve();
-      break;
-    case "issue-key": {
-      const username = args[0];
-      if (!username) throw new ConfigError(`missing <username>\n\n${USAGE}`);
-      const token = await issueKey(keysFile, username);
-      console.log(token);
-      console.error(`Stored the key hash for "${username}" in ${keysFile}. Keep the token secret.`);
-      break;
+/** Runs a server command and returns the exit code. After `serve`, the server continues to run. */
+export async function main(argv: string[]): Promise<number> {
+  try {
+    let parsed;
+    try {
+      parsed = parseArgs({
+        args: argv,
+        allowPositionals: true,
+        options: { config: { type: "string" }, help: { type: "boolean", short: "h" } },
+      });
+    } catch (err) {
+      throw new ConfigError(err instanceof Error ? err.message : String(err));
     }
-    case "help":
-    case "--help":
-    case "-h":
+    const [command = "serve", ...args] = parsed.positionals;
+    if (parsed.values.help || command === "help") {
       console.log(USAGE);
-      break;
-    default:
-      throw new ConfigError(`unknown command "${command}"\n\n${USAGE}`);
+      return 0;
+    }
+    if (command !== "serve" && command !== "issue-key") {
+      throw new ConfigError(`unknown command "${command}"`);
+    }
+    loadConfigFile(parsed.values.config ?? configFile(process.env));
+    if (command === "serve") {
+      await serve();
+      return 0;
+    }
+    const [username, ...extra] = args;
+    if (!username || extra.length > 0) {
+      throw new ConfigError(
+        "issue-key needs exactly one <username>",
+        "Run: fileslop issue-key <username>",
+      );
+    }
+    const keysFile = join(dataDir(process.env), "keys.txt");
+    console.log(await issueKey(keysFile, username));
+    console.error(`Stored the key hash for "${username}" in ${keysFile}. Keep the token secret.`);
+    return 0;
+  } catch (err) {
+    if (err instanceof ConfigError) {
+      console.error(`fileslop: ${err.message}\nFix: ${err.fix}`);
+      return 2;
+    }
+    console.error(`fileslop: ${err instanceof Error ? err.message : String(err)}`);
+    return 1;
   }
-} catch (err) {
-  console.error(`fileslop-server: ${err instanceof Error ? err.message : String(err)}`);
-  process.exit(err instanceof ConfigError ? 2 : 1);
 }
+
+if (import.meta.main) process.exitCode = await main(process.argv.slice(2));

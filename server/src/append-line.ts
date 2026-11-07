@@ -43,7 +43,8 @@ async function syncDir(path: string): Promise<void> {
  * Callers: server start and `issue-key`, so the few extra fsync calls do not matter.
  */
 export async function makeDir(dir: string): Promise<void> {
-  await mkdir(dir, { recursive: true });
+  // Only the owner: the folder holds the token hashes and the list of all file URLs.
+  await mkdir(dir, { recursive: true, mode: 0o700 });
   for (let d = resolve(dir); ; d = dirname(d)) {
     await syncDir(d);
     if (dirname(d) === d) break;

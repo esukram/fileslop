@@ -18,6 +18,7 @@ Fileslop closes this gap. You upload a file with one command. You get a URL. You
   Uploads need a token. Reading a file needs only its URL.
 - **A command line client.** `npx -y fileslop upload plan.html` prints the URL as JSON.
   Its help and error messages tell humans and agents how to fix problems.
+  `npx fileslop serve` runs the server without a container.
 - **An agent skill.** `npx skills add esukram/fileslop` teaches coding agents to upload artifacts and to attach them to pull requests.
 
 ```sh

@@ -1,4 +1,5 @@
-import { resolve } from "node:path";
+import { homedir } from "node:os";
+import { join, resolve } from "node:path";
 import type { Backend, StoreConfig } from "./store.ts";
 
 export interface Config {
@@ -12,13 +13,43 @@ export interface Config {
   store: StoreConfig;
 }
 
-export class ConfigError extends Error {}
+/** A problem that the operator must correct. `fix` tells the next step. */
+export class ConfigError extends Error {
+  readonly fix: string;
+  constructor(message: string, fix = "Run: fileslop help serve") {
+    super(message);
+    this.fix = fix;
+  }
+}
 
 const HETZNER_LOCATIONS = ["fsn1", "nbg1", "hel1"];
 
-/** Data directory for keys and index. Only needs FILESLOP_DATA_DIR. */
+/** $XDG_CONFIG_HOME/fileslop, by default ~/.config/fileslop. The client uses the same folder. */
+const configDir = (env: NodeJS.ProcessEnv): string =>
+  join(env["XDG_CONFIG_HOME"] || join(homedir(), ".config"), "fileslop");
+
+/** Default path of the server config file. */
+export const configFile = (env: NodeJS.ProcessEnv): string => join(configDir(env), ".env");
+
+/** Data directory for keys and index. Default: the config folder. */
 export const dataDir = (env: NodeJS.ProcessEnv): string =>
-  resolve(env["FILESLOP_DATA_DIR"] || "./data");
+  resolve(env["FILESLOP_DATA_DIR"] || configDir(env));
+
+/** Loads the config file into process.env. Real environment variables win over the file. */
+export function loadConfigFile(file: string): void {
+  try {
+    process.loadEnvFile(file);
+  } catch (err) {
+    const missing = (err as NodeJS.ErrnoException).code === "ENOENT";
+    throw new ConfigError(
+      missing
+        ? `no config file ${file}`
+        : `cannot read the config file ${file}: ${err instanceof Error ? err.message : String(err)}`,
+      `Create ${file} with the FILESLOP_* variables, or give the path with --config <file>. ` +
+        "Sample: https://github.com/esukram/fileslop/blob/main/server/.env.sample",
+    );
+  }
+}
 
 /** Reads the configuration and reports all problems at once. */
 export function loadConfig(env: NodeJS.ProcessEnv): Config {
@@ -96,7 +127,10 @@ export function loadConfig(env: NodeJS.ProcessEnv): Config {
     },
   };
   if (problems.length > 0) {
-    throw new ConfigError(`invalid configuration:\n  - ${problems.join("\n  - ")}`);
+    throw new ConfigError(
+      `invalid configuration:\n  - ${problems.join("\n  - ")}`,
+      "Correct the FILESLOP_* variables in the config file or in the environment.",
+    );
   }
   return config;
 }
